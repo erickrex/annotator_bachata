@@ -1,0 +1,251 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Bachata Clip Slicer — Ingest">
+  <div class="ingest-page">
+    <div class="card">
+      <h2>Add YouTube Video</h2>
+      <form id="ingest-form">
+        <input
+          type="url"
+          id="url-input"
+          placeholder="https://www.youtube.com/watch?v=..."
+          required
+          autocomplete="off"
+        />
+        <button type="submit" id="submit-btn">Download</button>
+      </form>
+
+      <div id="error-msg" class="error" style="display:none;"></div>
+
+      <div id="progress-section" style="display:none;">
+        <div class="progress-label">
+          <span>Downloading…</span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="progress-detail" id="progress-detail"></div>
+      </div>
+
+      <div id="complete-section" style="display:none;">
+        <p class="success">✓ Download complete</p>
+        <a href="/review" class="review-link" id="review-link">Go to Clip Review →</a>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .ingest-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 16px;
+  }
+  .card {
+    background: #141414;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 32px;
+    width: 100%;
+    max-width: 520px;
+  }
+  h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    color: #e0e0e0;
+  }
+  form {
+    display: flex;
+    gap: 8px;
+  }
+  input[type="url"] {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  input[type="url"]:focus {
+    border-color: #555;
+  }
+  button {
+    padding: 8px 20px;
+    border-radius: 4px;
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button:hover { background: #1d4ed8; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #2a1010;
+    border: 1px solid #5c2020;
+    border-radius: 4px;
+    color: #ff6b6b;
+    font-size: 0.85rem;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    color: #aaa;
+  }
+  .progress-track {
+    background: #222;
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #2563eb;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  .progress-detail {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 4px;
+  }
+  .success {
+    color: #51cf66;
+    font-size: 0.9rem;
+    margin-top: 16px;
+  }
+  .review-link {
+    display: inline-block;
+    margin-top: 12px;
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .review-link:hover { text-decoration: underline; }
+</style>
+
+<script>
+  const form = document.getElementById('ingest-form') as HTMLFormElement;
+  const urlInput = document.getElementById('url-input') as HTMLInputElement;
+  const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
+  const progressSection = document.getElementById('progress-section') as HTMLDivElement;
+  const progressPct = document.getElementById('progress-pct') as HTMLSpanElement;
+  const progressBar = document.getElementById('progress-bar') as HTMLDivElement;
+  const progressDetail = document.getElementById('progress-detail') as HTMLDivElement;
+  const completeSection = document.getElementById('complete-section') as HTMLDivElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    // Reset UI
+    errorMsg.style.display = 'none';
+    completeSection.style.display = 'none';
+    progressSection.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressPct.textContent = '0%';
+    progressDetail.textContent = '';
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const match = line.match(/^data:\s*(.+)$/m);
+          if (!match) continue;
+
+          const event = JSON.parse(match[1]);
+
+          if (event.type === 'progress') {
+            const pct = Math.round(event.percent ?? 0);
+            progressBar.style.width = `${pct}%`;
+            progressPct.textContent = `${pct}%`;
+            const parts: string[] = [];
+            if (event.speed) parts.push(event.speed);
+            if (event.eta) parts.push(`ETA: ${event.eta}`);
+            progressDetail.textContent = parts.join(' · ');
+          } else if (event.type === 'complete') {
+            const sourceId = event.metadata?.sourceId;
+            if (!sourceId) {
+              throw new Error('Ingest completed but no sourceId returned');
+            }
+
+            // Phase 2: Analyze
+            progressPct.textContent = '';
+            progressBar.style.width = '100%';
+            progressDetail.textContent = '';
+            const progressLabel = progressSection.querySelector('.progress-label span:first-child') as HTMLSpanElement;
+            progressLabel.textContent = 'Analyzing…';
+
+            const analyzeRes = await fetch(`/api/analyze/${sourceId}`, { method: 'POST' });
+            if (!analyzeRes.ok) {
+              const err = await analyzeRes.json().catch(() => ({ error: 'Analysis failed' }));
+              throw new Error(err.error || `Analysis failed (HTTP ${analyzeRes.status})`);
+            }
+
+            // Phase 3: Generate clips
+            progressLabel.textContent = 'Generating clips…';
+
+            const generateRes = await fetch('/api/clips/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sourceId, beatCount: 16 }),
+            });
+            if (!generateRes.ok) {
+              const err = await generateRes.json().catch(() => ({ error: 'Clip generation failed' }));
+              throw new Error(err.error || `Clip generation failed (HTTP ${generateRes.status})`);
+            }
+
+            // All three steps succeeded — show review link
+            progressSection.style.display = 'none';
+            completeSection.style.display = 'block';
+          } else if (event.type === 'error') {
+            throw new Error(event.error || 'Download failed');
+          }
+        }
+      }
+    } catch (err: any) {
+      progressSection.style.display = 'none';
+      errorMsg.textContent = err.message || 'An error occurred';
+      errorMsg.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
