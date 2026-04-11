@@ -231,4 +231,129 @@ describe('getAppState restore from project.json', () => {
       process.cwd = originalCwd;
     }
   });
+
+  it('restoreProjectState replaces stale runtime data on import', async () => {
+    await mkdir(join(tmpDir, 'sources'), { recursive: true });
+    await writeFile(join(tmpDir, 'sources', 'src1.mp4'), '');
+    await writeFile(join(tmpDir, 'sources', 'src1.wav'), '');
+
+    const originalCwd = process.cwd;
+    process.cwd = () => tmpDir;
+
+    try {
+      const mod = await import('./app-state.js');
+      mod.resetAppState();
+
+      const state = mod.getAppState();
+      state.clips.set('stale_clip', {
+        clipId: 'stale_clip',
+        sourceId: 'src1',
+        status: 'pending',
+        remotion: { fromFrame: 0, durationInFrames: 80, fps: 30 },
+        beatMarkerFrames: [0, 10],
+        cycleNumber: 1,
+        beatCount: 8,
+      });
+      state.cycles.set('src1', { cycles8: [], phrases16: [], phrases32: [] });
+      state.analysisResults.set('src1', {
+        detectedBpm: 120,
+        bpmConfidence: 0.9,
+        downbeatOffsetSeconds: 0,
+        beatGrid: [0],
+        beatGridFrames: [0],
+        energyProfile: [0.1],
+      });
+
+      const importedProject: ExtendedProjectFile = {
+        schema_version: '2.0',
+        project: {
+          name: 'Imported Project',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-06-01T00:00:00Z',
+        },
+        sources: [
+          {
+            source_id: 'src1',
+            youtube_url: 'https://youtube.com/watch?v=abc',
+            title: 'Test',
+            channel: 'Ch',
+            upload_date: '2024-01-01',
+            duration_seconds: 120,
+            fps: 30,
+            width: 1920,
+            height: 1080,
+            total_frames: 3600,
+            video_file: 'sources/src1.mp4',
+            audio_file: 'sources/src1.wav',
+            detected_bpm: 130,
+            bpm_confidence: 0.95,
+            downbeat_offset_seconds: 0.1,
+            beat_grid: [0.1],
+            beat_grid_frames: [3],
+            energy_profile: [0.5],
+            downloaded_at: '2024-01-01T00:00:00Z',
+          },
+        ],
+        enum_definitions: {} as any,
+        clips: [
+          {
+            clip_id: 'imported_clip',
+            source_id: 'src1',
+            status: 'pending',
+            remotion: { from_frame: 0, duration_in_frames: 240, fps: 30 },
+            move_name: '',
+            move_label: '' as any,
+            tags: [],
+            difficulty: '' as any,
+            energy_level: '' as any,
+            style: '' as any,
+            estimated_tempo_bpm: 130,
+            duration_seconds: 8,
+            beats_total: 8,
+            bars_total: 2,
+            phrase_resolution: '' as any,
+            song_position: {
+              start_time_seconds: 0,
+              end_time_seconds: 8,
+              cycle_number: 1,
+              beat_start: 1,
+              beat_end: 8,
+            },
+            completion_profile: {
+              basico_completion_counts: 0,
+              tempo_feel: '' as any,
+              accent_pattern: '' as any,
+              syncopation_level: 0,
+            },
+            entry_state: {
+              hold: '' as any,
+              leader_weight_foot: '' as any,
+              follower_weight_foot: '' as any,
+            },
+            exit_state: {
+              hold: '' as any,
+              leader_weight_foot: '' as any,
+              follower_weight_foot: '' as any,
+            },
+            trim_profile: { trim_safe_start_seconds: 0, trim_safe_end_seconds: 8 },
+            motion_profile: {},
+            camera_profile: {},
+            quality_profile: {},
+            embedding_refs: {},
+          },
+        ],
+      };
+
+      const result = mod.restoreProjectState(importedProject);
+      expect(result.success).toBe(true);
+      expect(state.clips.size).toBe(0);
+      expect(state.cycles.size).toBe(0);
+      expect(state.analysisResults.size).toBe(0);
+      expect(state.annotationService.getAnnotation('imported_clip')).not.toBeNull();
+
+      mod.resetAppState();
+    } finally {
+      process.cwd = originalCwd;
+    }
+  });
 });

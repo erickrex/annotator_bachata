@@ -3,7 +3,13 @@
 
 import type { APIRoute } from 'astro';
 import { createClips } from '../../../services/clip-manager.js';
-import { getAppState, autoSave, jsonResponse, errorResponse } from '../../../services/app-state.js';
+import {
+  getAppState,
+  autoSave,
+  jsonResponse,
+  errorResponse,
+  replaceClipsForSource,
+} from '../../../services/app-state.js';
 
 export const POST: APIRoute = async ({ request }) => {
   let body: { sourceId?: string; beatCount?: number };
@@ -35,25 +41,8 @@ export const POST: APIRoute = async ({ request }) => {
     return errorResponse(`No cycle data for source: ${sourceId}. Run analysis first.`, 400);
   }
 
-  const clips = createClips(sourceId, cycles, bc, source.fps);
-
-  // Store clips in app state
-  for (const clip of clips) {
-    state.clips.set(clip.clipId, clip);
-  }
-
-  // Seed annotation records for each generated clip (Bug 4 fix)
-  for (const clip of clips) {
-    state.annotationService.updateAnnotation(clip.clipId, {
-      source_id: clip.sourceId,
-      status: 'pending',
-      remotion: {
-        from_frame: clip.remotion.fromFrame,
-        duration_in_frames: clip.remotion.durationInFrames,
-        fps: clip.remotion.fps,
-      },
-    });
-  }
+  const clips = createClips(sourceId, cycles, bc, source.fps, source.beat_grid_frames);
+  replaceClipsForSource(sourceId, clips);
 
   autoSave();
 

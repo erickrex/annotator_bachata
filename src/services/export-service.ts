@@ -4,6 +4,23 @@
 import type { VirtualClipDef } from '../types/index.js';
 import { join } from 'node:path';
 import { mkdir } from 'node:fs/promises';
+import { getAppState } from './app-state.js';
+
+let bundleLocationPromise: Promise<string> | null = null;
+
+async function getBundleLocation(): Promise<string> {
+  if (!bundleLocationPromise) {
+    bundleLocationPromise = (async () => {
+      const { bundle } = await import('@remotion/renderer');
+      return bundle({
+        entryPoint: join(getAppState().projectDir, 'src', 'remotion', 'index.ts'),
+        onProgress: () => {},
+      });
+    })();
+  }
+
+  return bundleLocationPromise;
+}
 
 /**
  * Export a single virtual clip to an MP4 file using Remotion's renderMedia().
@@ -13,19 +30,15 @@ export async function exportClip(
   clip: VirtualClipDef,
   sourceVideoPath: string,
   outputDir: string,
+  energyProfile: number[] = [],
 ): Promise<string> {
   await mkdir(outputDir, { recursive: true });
 
   const outputPath = join(outputDir, `${clip.clipId}.mp4`);
 
   // Dynamic import to avoid hard dependency at module load time
-  const { renderMedia, bundle } = await import('@remotion/renderer');
-
-  // Bundle the Remotion project (assumes a Root.tsx entry point exists)
-  const bundleLocation = await bundle({
-    entryPoint: join(process.cwd(), 'src', 'remotion', 'index.ts'),
-    onProgress: () => {},
-  });
+  const { renderMedia } = await import('@remotion/renderer');
+  const bundleLocation = await getBundleLocation();
 
   await renderMedia({
     composition: {
@@ -39,7 +52,7 @@ export async function exportClip(
         startFrame: clip.remotion.fromFrame,
         durationInFrames: clip.remotion.durationInFrames,
         beatMarkers: clip.beatMarkerFrames,
-        energyProfile: [],
+        energyProfile,
       },
       defaultCodec: 'h264',
       props: {},
@@ -47,7 +60,7 @@ export async function exportClip(
     serveUrl: bundleLocation,
     codec: 'h264',
     outputLocation: outputPath,
-    frameRange: [clip.remotion.fromFrame, clip.remotion.fromFrame + clip.remotion.durationInFrames - 1],
+    frameRange: [0, clip.remotion.durationInFrames - 1],
   });
 
   return outputPath;
@@ -61,7 +74,7 @@ export async function exportClip(
  */
 export async function* exportBatch(
   clips: VirtualClipDef[],
-  resolveSourceVideoPath: (clip: VirtualClipDef) => string,
+  resolveSourceData: (clip: VirtualClipDef) => { sourceVideoPath: string; energyProfile: number[] },
   outputDir: string,
   onProgress: (clipId: string, percent: number) => void,
 ): AsyncGenerator<{ clipId: string; outputPath: string }> {
@@ -71,8 +84,8 @@ export async function* exportBatch(
     const clip = eligible[i];
     onProgress(clip.clipId, 0);
 
-    const sourceVideoPath = resolveSourceVideoPath(clip);
-    const outputPath = await exportClip(clip, sourceVideoPath, outputDir);
+    const { sourceVideoPath, energyProfile } = resolveSourceData(clip);
+    const outputPath = await exportClip(clip, sourceVideoPath, outputDir, energyProfile);
 
     onProgress(clip.clipId, 100);
     yield { clipId: clip.clipId, outputPath };

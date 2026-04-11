@@ -6,6 +6,7 @@ import type { VirtualClipDef } from '../types/index.js';
 export interface PlayerWrapperProps {
   clip: VirtualClipDef;
   sourceVideoPath: string;
+  energyProfile: number[];
   onFrameChange?: (frame: number) => void;
   onNextClip?: () => void;
   onPrevClip?: () => void;
@@ -14,6 +15,7 @@ export interface PlayerWrapperProps {
 export const PlayerWrapper: React.FC<PlayerWrapperProps> = ({
   clip,
   sourceVideoPath,
+  energyProfile,
   onFrameChange,
   onNextClip,
   onPrevClip,
@@ -106,7 +108,7 @@ export const PlayerWrapper: React.FC<PlayerWrapperProps> = ({
           startFrame: remotion.fromFrame,
           durationInFrames: remotion.durationInFrames,
           beatMarkers: beatMarkerFrames,
-          energyProfile: [],
+          energyProfile,
         }}
       />
       <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>

@@ -3,7 +3,14 @@
 
 import type { APIRoute } from 'astro';
 import { adjustBoundary } from '../../../../services/clip-manager.js';
-import { getAppState, autoSave, jsonResponse, errorResponse } from '../../../../services/app-state.js';
+import {
+  getAppState,
+  autoSave,
+  jsonResponse,
+  errorResponse,
+  removeClip,
+  upsertClip,
+} from '../../../../services/app-state.js';
 
 export const PUT: APIRoute = async ({ params, request }) => {
   const { id } = params;
@@ -37,10 +44,12 @@ export const PUT: APIRoute = async ({ params, request }) => {
   }
 
   const adjusted = adjustBoundary(clip, newFromFrame, newEndFrame, source.beat_grid_frames);
+  const baseAnnotation = state.annotationService.getAnnotation(id);
 
-  // Replace clip
-  state.clips.delete(id);
-  state.clips.set(adjusted.clipId, adjusted);
+  if (adjusted.clipId !== id) {
+    removeClip(id);
+  }
+  upsertClip(adjusted, baseAnnotation);
 
   autoSave();
 

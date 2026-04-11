@@ -36,5 +36,6 @@ export const PUT: APIRoute = async ({ params, request }) => {
     success: validationResult.valid,
     validationResult,
     completeness,
+    annotation,
   });
 };

@@ -6,7 +6,14 @@ import { getAppState, jsonResponse } from '../../../services/app-state.js';
 
 export const GET: APIRoute = async () => {
   const state = getAppState();
-  const clips = Array.from(state.clips.values()).map((clip) => {
+  const clips = Array.from(state.clips.values())
+    .sort((a, b) => (
+      a.remotion.fromFrame - b.remotion.fromFrame ||
+      a.cycleNumber - b.cycleNumber ||
+      a.beatCount - b.beatCount ||
+      a.clipId.localeCompare(b.clipId)
+    ))
+    .map((clip) => {
     const annotation = state.annotationService.getAnnotation(clip.clipId);
     const completeness = annotation
       ? state.annotationService.calculateCompleteness(annotation)
@@ -16,7 +23,7 @@ export const GET: APIRoute = async () => {
       ...clip,
       completeness,
     };
-  });
+    });
 
   // Also return annotations so the review page can display them
   const annotations = clips

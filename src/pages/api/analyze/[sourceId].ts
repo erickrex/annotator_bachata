@@ -36,13 +36,17 @@ export const POST: APIRoute = async ({ params }) => {
     source.energy_profile = result.energyProfile;
 
     // Build cycle hierarchy
-    const downbeatIndex = result.beatGrid.findIndex(
-      (t) => Math.abs(t - result.downbeatOffsetSeconds) < 0.05,
-    );
+    const downbeatIndex = result.beatGrid.length === 0
+      ? 0
+      : result.beatGrid.reduce((bestIndex, timestamp, index) => {
+          const bestDistance = Math.abs(result.beatGrid[bestIndex] - result.downbeatOffsetSeconds);
+          const currentDistance = Math.abs(timestamp - result.downbeatOffsetSeconds);
+          return currentDistance < bestDistance ? index : bestIndex;
+        }, 0);
     const cycles = buildCycles(
       result.beatGridFrames,
       result.beatGrid,
-      Math.max(0, downbeatIndex),
+      downbeatIndex,
     );
     state.cycles.set(sourceId, cycles);
 

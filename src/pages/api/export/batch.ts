@@ -16,18 +16,21 @@ export const POST: APIRoute = async () => {
 
   const outputDir = join(state.projectDir, 'exports');
 
-  // Resolve source video path per clip to support multi-source projects
-  const resolveSourceVideoPath = (clip: { sourceId: string }) => {
+  // Resolve source video path and analyzed overlay data per clip.
+  const resolveSourceData = (clip: { sourceId: string }) => {
     const source = state.annotationService.getSource(clip.sourceId);
     if (!source) {
       throw new Error(`Source not found for clip: ${clip.sourceId}`);
     }
-    return join(state.projectDir, source.video_file);
+    return {
+      sourceVideoPath: join(state.projectDir, source.video_file),
+      energyProfile: source.energy_profile,
+    };
   };
 
   try {
     const results: Array<{ clipId: string; outputPath: string }> = [];
-    const gen = exportBatch(allClips, resolveSourceVideoPath, outputDir, () => {});
+    const gen = exportBatch(allClips, resolveSourceData, outputDir, () => {});
 
     for await (const result of gen) {
       results.push(result);

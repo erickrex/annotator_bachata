@@ -3,7 +3,14 @@
 
 import type { APIRoute } from 'astro';
 import { mergeClips } from '../../../services/clip-manager.js';
-import { getAppState, autoSave, jsonResponse, errorResponse } from '../../../services/app-state.js';
+import {
+  getAppState,
+  autoSave,
+  jsonResponse,
+  errorResponse,
+  removeClip,
+  upsertClip,
+} from '../../../services/app-state.js';
 
 export const POST: APIRoute = async ({ request }) => {
   let body: { clipIdA?: string; clipIdB?: string };
@@ -19,24 +26,31 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const state = getAppState();
-  const clipA = state.clips.get(clipIdA);
-  const clipB = state.clips.get(clipIdB);
+  let clipA = state.clips.get(clipIdA);
+  let clipB = state.clips.get(clipIdB);
 
   if (!clipA) return errorResponse(`Clip not found: ${clipIdA}`, 404);
   if (!clipB) return errorResponse(`Clip not found: ${clipIdB}`, 404);
 
-  // Verify adjacency: clipA's end should meet clipB's start
   const endA = clipA.remotion.fromFrame + clipA.remotion.durationInFrames;
-  if (endA !== clipB.remotion.fromFrame) {
+  const endB = clipB.remotion.fromFrame + clipB.remotion.durationInFrames;
+  if (endA !== clipB.remotion.fromFrame && endB === clipA.remotion.fromFrame) {
+    [clipA, clipB] = [clipB, clipA];
+  }
+
+  // Verify adjacency: clipA's end should meet clipB's start
+  if (clipA.remotion.fromFrame + clipA.remotion.durationInFrames !== clipB.remotion.fromFrame) {
     return errorResponse('Clips are not adjacent. clipA must end where clipB starts.');
   }
 
   const merged = mergeClips(clipA, clipB);
+  const baseAnnotation =
+    state.annotationService.getAnnotation(clipA.clipId) ??
+    state.annotationService.getAnnotation(clipB.clipId);
 
-  // Remove old clips, add merged
-  state.clips.delete(clipIdA);
-  state.clips.delete(clipIdB);
-  state.clips.set(merged.clipId, merged);
+  removeClip(clipA.clipId);
+  removeClip(clipB.clipId);
+  upsertClip(merged, baseAnnotation);
 
   autoSave();
 

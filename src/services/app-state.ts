@@ -8,6 +8,7 @@ import { AnnotationServiceImpl } from './annotation-service.js';
 import { computeManifest, createDebouncedSaver } from './project-service.js';
 import type { DebouncedSaver, ExtendedProjectFile } from './project-service.js';
 import type {
+  ClipAnnotation,
   AudioAnalysisResult,
   CycleHierarchy,
   ProjectManifest,
@@ -27,6 +28,51 @@ export interface AppState {
 
 let instance: AppState | null = null;
 
+function resolveProjectDir(): string {
+  return process.env.PROJECT_DIR ?? process.cwd();
+}
+
+function cloneAnnotation(annotation: ClipAnnotation): ClipAnnotation {
+  return JSON.parse(JSON.stringify(annotation)) as ClipAnnotation;
+}
+
+function clipToAnnotationFields(clip: VirtualClipDef): Partial<ClipAnnotation> {
+  return {
+    clip_id: clip.clipId,
+    source_id: clip.sourceId,
+    status: clip.status,
+    remotion: {
+      from_frame: clip.remotion.fromFrame,
+      duration_in_frames: clip.remotion.durationInFrames,
+      fps: clip.remotion.fps,
+    },
+  };
+}
+
+function hydrateRuntimeState(state: AppState, projectFile: ExtendedProjectFile): void {
+  state.clips.clear();
+  state.cycles.clear();
+  state.analysisResults.clear();
+
+  if (projectFile.virtual_clips) {
+    for (const clip of projectFile.virtual_clips) {
+      state.clips.set(clip.clipId, clip);
+    }
+  }
+
+  if (projectFile.cycle_hierarchies) {
+    for (const [key, hierarchy] of projectFile.cycle_hierarchies) {
+      state.cycles.set(key, hierarchy);
+    }
+  }
+
+  if (projectFile.analysis_results) {
+    for (const [key, result] of projectFile.analysis_results) {
+      state.analysisResults.set(key, result);
+    }
+  }
+}
+
 /** Reset the singleton (for testing only). */
 export function resetAppState(): void {
   instance = null;
@@ -34,7 +80,7 @@ export function resetAppState(): void {
 
 export function getAppState(): AppState {
   if (!instance) {
-    const projectDir = process.cwd();
+    const projectDir = resolveProjectDir();
     const annotationService = new AnnotationServiceImpl('Bachata Clip Library');
     const clips = new Map<string, VirtualClipDef>();
     const cycles = new Map<string, CycleHierarchy>();
@@ -47,31 +93,30 @@ export function getAppState(): AppState {
         const raw = readFileSync(projectJsonPath, 'utf-8');
         const saved = JSON.parse(raw) as ExtendedProjectFile;
 
-        // Import annotations and sources via the annotation service
-        annotationService.importProject(saved, projectDir);
-
-        // Hydrate virtual clips
-        if (saved.virtual_clips) {
-          for (const clip of saved.virtual_clips) {
-            clips.set(clip.clipId, clip);
+        const result = annotationService.importProject(saved, projectDir);
+        if (result.success) {
+          if (saved.virtual_clips) {
+            for (const clip of saved.virtual_clips) {
+              clips.set(clip.clipId, clip);
+            }
           }
-        }
 
-        // Hydrate cycle hierarchies
-        if (saved.cycle_hierarchies) {
-          for (const [key, hierarchy] of saved.cycle_hierarchies) {
-            cycles.set(key, hierarchy);
+          if (saved.cycle_hierarchies) {
+            for (const [key, hierarchy] of saved.cycle_hierarchies) {
+              cycles.set(key, hierarchy);
+            }
           }
-        }
 
-        // Hydrate analysis results
-        if (saved.analysis_results) {
-          for (const [key, result] of saved.analysis_results) {
-            analysisResults.set(key, result);
+          if (saved.analysis_results) {
+            for (const [key, result] of saved.analysis_results) {
+              analysisResults.set(key, result);
+            }
           }
+        } else {
+          console.error('Failed to restore project state due to missing files', result.missingFiles);
         }
-      } catch {
-        // If restore fails, continue with empty state
+      } catch (error) {
+        console.error('Failed to restore project state from project.json', error);
       }
     }
 
@@ -88,18 +133,76 @@ export function getAppState(): AppState {
   return instance;
 }
 
-/** Trigger auto-save of project state. */
-export function autoSave(): void {
+export function getFullProjectState(): ExtendedProjectFile {
   const state = getAppState();
   const projectFile = state.annotationService.exportProject();
-
-  // Build extended project file with full runtime state
-  const extendedFile: ExtendedProjectFile = {
+  return {
     ...projectFile,
     virtual_clips: Array.from(state.clips.values()),
     cycle_hierarchies: Array.from(state.cycles.entries()),
     analysis_results: Array.from(state.analysisResults.entries()),
   };
+}
+
+export function restoreProjectState(projectFile: ExtendedProjectFile) {
+  const state = getAppState();
+  const result = state.annotationService.importProject(projectFile, state.projectDir);
+  if (!result.success) {
+    return result;
+  }
+
+  hydrateRuntimeState(state, projectFile);
+  return result;
+}
+
+export function upsertClip(clip: VirtualClipDef, baseAnnotation: ClipAnnotation | null = null): void {
+  const state = getAppState();
+  state.clips.set(clip.clipId, clip);
+
+  const annotation = baseAnnotation ? cloneAnnotation(baseAnnotation) : null;
+  state.annotationService.updateAnnotation(clip.clipId, {
+    ...(annotation ?? {}),
+    ...clipToAnnotationFields(clip),
+  });
+}
+
+export function removeClip(clipId: string): void {
+  const state = getAppState();
+  state.clips.delete(clipId);
+  state.annotationService.deleteAnnotation(clipId);
+}
+
+export function replaceClipsForSource(sourceId: string, newClips: VirtualClipDef[]): void {
+  const state = getAppState();
+  const existingAnnotations = new Map<string, ClipAnnotation>();
+
+  for (const clip of state.clips.values()) {
+    if (clip.sourceId !== sourceId) {
+      continue;
+    }
+
+    const annotation = state.annotationService.getAnnotation(clip.clipId);
+    if (annotation) {
+      existingAnnotations.set(clip.clipId, cloneAnnotation(annotation));
+    }
+  }
+
+  for (const clip of Array.from(state.clips.values())) {
+    if (clip.sourceId === sourceId) {
+      removeClip(clip.clipId);
+    }
+  }
+
+  for (const clip of newClips) {
+    upsertClip(clip, existingAnnotations.get(clip.clipId) ?? null);
+  }
+}
+
+/** Trigger auto-save of project state. */
+export function autoSave(): void {
+  const state = getAppState();
+  const projectFile = state.annotationService.exportProject();
+  const extendedFile = getFullProjectState();
 
   state.debouncedSaver.save(extendedFile);
 

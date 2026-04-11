@@ -3,7 +3,14 @@
 
 import type { APIRoute } from 'astro';
 import { splitClip } from '../../../../services/clip-manager.js';
-import { getAppState, autoSave, jsonResponse, errorResponse } from '../../../../services/app-state.js';
+import {
+  getAppState,
+  autoSave,
+  jsonResponse,
+  errorResponse,
+  removeClip,
+  upsertClip,
+} from '../../../../services/app-state.js';
 
 export const POST: APIRoute = async ({ params, request }) => {
   const { id } = params;
@@ -28,18 +35,28 @@ export const POST: APIRoute = async ({ params, request }) => {
   if (!clip) {
     return errorResponse(`Clip not found: ${id}`, 404);
   }
+  if (clip.beatCount <= 8) {
+    return errorResponse('Clip must contain at least two cycles to split.', 400);
+  }
 
   const cycles = state.cycles.get(clip.sourceId);
   if (!cycles) {
     return errorResponse(`No cycle data for source: ${clip.sourceId}`, 400);
   }
 
-  const [clipA, clipB] = splitClip(clip, splitAtFrame, cycles);
+  let clipA;
+  let clipB;
+  try {
+    [clipA, clipB] = splitClip(clip, clip.remotion.fromFrame + splitAtFrame, cycles);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return errorResponse(message, 400);
+  }
 
-  // Remove original, add two new clips
-  state.clips.delete(id);
-  state.clips.set(clipA.clipId, clipA);
-  state.clips.set(clipB.clipId, clipB);
+  const baseAnnotation = state.annotationService.getAnnotation(id);
+  removeClip(id);
+  upsertClip(clipA, baseAnnotation);
+  upsertClip(clipB, baseAnnotation);
 
   autoSave();
 

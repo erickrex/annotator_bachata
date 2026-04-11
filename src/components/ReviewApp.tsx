@@ -14,6 +14,18 @@ import { ClipGrid } from './ClipGrid.js';
 import { PlayerWrapper } from './PlayerWrapper.js';
 import { AnnotationForm } from './AnnotationForm.js';
 
+function resolveMediaUrl(relativePath: string): string {
+  if (!relativePath) {
+    return '';
+  }
+
+  const encodedPath = relativePath
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `/api/media/${encodedPath}`;
+}
+
 export const ReviewApp: React.FC = () => {
   const [clips, setClips] = useState<VirtualClipDef[]>([]);
   const [annotations, setAnnotations] = useState<Map<string, ClipAnnotation>>(new Map());
@@ -24,35 +36,50 @@ export const ReviewApp: React.FC = () => {
   const [completeness, setCompleteness] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
 
-  // Load clips and annotations from the API on mount
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch('/api/clips');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (Array.isArray(data.clips)) {
-          setClips(data.clips);
-          setCompletenessMap(
-            new Map(data.clips.map((c: VirtualClipDef & { completeness?: number }) => [c.clipId, c.completeness ?? 0])),
-          );
-        }
-        if (Array.isArray(data.annotations)) {
-          setAnnotations(
-            new Map(data.annotations.map((a: ClipAnnotation) => [a.clip_id, a])),
-          );
-        }
-        if (Array.isArray(data.sources)) {
-          setSources(
-            new Map(data.sources.map((s: SourceRecord) => [s.source_id, s])),
-          );
-        }
-      } catch {
-        /* ignore */
+  const loadReviewState = useCallback(async (preferredClipId: string | null = null) => {
+    try {
+      const res = await fetch('/api/clips');
+      if (!res.ok) {
+        throw new Error(`Failed to load clips (HTTP ${res.status})`);
       }
+
+      const data = await res.json();
+      const nextClips = Array.isArray(data.clips) ? data.clips as Array<VirtualClipDef & { completeness?: number }> : [];
+      const nextAnnotations = new Map(
+        Array.isArray(data.annotations)
+          ? data.annotations.map((annotation: ClipAnnotation) => [annotation.clip_id, annotation])
+          : [],
+      );
+      const nextSources = new Map(
+        Array.isArray(data.sources)
+          ? data.sources.map((source: SourceRecord) => [source.source_id, source])
+          : [],
+      );
+      const nextCompletenessMap = new Map(
+        nextClips.map((clip) => [clip.clipId, clip.completeness ?? 0]),
+      );
+
+      setClips(nextClips);
+      setAnnotations(nextAnnotations);
+      setSources(nextSources);
+      setCompletenessMap(nextCompletenessMap);
+
+      const nextSelectedClipId = preferredClipId && nextClips.some((clip) => clip.clipId === preferredClipId)
+        ? preferredClipId
+        : nextClips.find((clip) => clip.status !== 'discarded')?.clipId ?? nextClips[0]?.clipId ?? null;
+
+      setSelectedClipId(nextSelectedClipId);
+      setCurrentFrame(0);
+      setValidationErrors([]);
+      setCompleteness(nextSelectedClipId ? nextCompletenessMap.get(nextSelectedClipId) ?? 0 : 0);
+    } catch (error) {
+      console.error('Failed to load review state', error);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    void loadReviewState();
+  }, [loadReviewState]);
 
   const selectedClip = clips.find((c) => c.clipId === selectedClipId) ?? null;
   const selectedAnnotation = selectedClipId ? annotations.get(selectedClipId) ?? null : null;
@@ -82,7 +109,9 @@ export const ReviewApp: React.FC = () => {
   const handleSelectClip = useCallback((clipId: string) => {
     setSelectedClipId(clipId);
     setValidationErrors([]);
-  }, []);
+    setCompleteness(completenessMap.get(clipId) ?? 0);
+    setCurrentFrame(0);
+  }, [completenessMap]);
 
   const handleDiscardClip = useCallback(
     async (clipId: string) => {
@@ -93,14 +122,12 @@ export const ReviewApp: React.FC = () => {
           body: JSON.stringify({ status: 'discarded' }),
         });
         if (!res.ok) return;
-        setClips((prev) =>
-          prev.map((c) => (c.clipId === clipId ? { ...c, status: 'discarded' as const } : c)),
-        );
-      } catch {
-        /* ignore */
+        await loadReviewState();
+      } catch (error) {
+        console.error('Failed to discard clip', error);
       }
     },
-    [],
+    [loadReviewState],
   );
 
   const handleMergeClips = useCallback(
@@ -113,15 +140,12 @@ export const ReviewApp: React.FC = () => {
         });
         if (!res.ok) return;
         const data = await res.json();
-        setClips((prev) => {
-          const filtered = prev.filter((c) => c.clipId !== clipIdA && c.clipId !== clipIdB);
-          return [...filtered, data.merged];
-        });
-      } catch {
-        /* ignore */
+        await loadReviewState(data.merged?.clipId ?? null);
+      } catch (error) {
+        console.error('Failed to merge clips', error);
       }
     },
-    [],
+    [loadReviewState],
   );
 
   const handleSplitClip = useCallback(
@@ -134,15 +158,12 @@ export const ReviewApp: React.FC = () => {
         });
         if (!res.ok) return;
         const data = await res.json();
-        setClips((prev) => {
-          const filtered = prev.filter((c) => c.clipId !== clipId);
-          return [...filtered, ...data.clips];
-        });
-      } catch {
-        /* ignore */
+        await loadReviewState(data.clips?.[0]?.clipId ?? null);
+      } catch (error) {
+        console.error('Failed to split clip', error);
       }
     },
-    [],
+    [loadReviewState],
   );
 
   const handleFieldChange = useCallback(
@@ -169,20 +190,21 @@ export const ReviewApp: React.FC = () => {
         setValidationErrors(data.validationResult?.errors ?? []);
         setCompleteness(data.completeness ?? 0);
 
-        // Refresh the annotation for this clip
-        const clipRes = await fetch(`/api/clips/${selectedClipId}`);
-        if (clipRes.ok) {
-          const clipData = await clipRes.json();
-          if (clipData.annotation) {
-            setAnnotations((prev) => {
-              const next = new Map(prev);
-              next.set(selectedClipId, clipData.annotation);
-              return next;
-            });
-          }
+        if (data.annotation) {
+          setAnnotations((prev) => {
+            const next = new Map(prev);
+            next.set(selectedClipId, data.annotation);
+            return next;
+          });
         }
-      } catch {
-        /* ignore */
+
+        setCompletenessMap((prev) => {
+          const next = new Map(prev);
+          next.set(selectedClipId, data.completeness ?? 0);
+          return next;
+        });
+      } catch (error) {
+        console.error('Failed to update annotation', error);
       }
     },
     [selectedClipId],
@@ -223,7 +245,8 @@ export const ReviewApp: React.FC = () => {
         {selectedClip ? (
           <PlayerWrapper
             clip={selectedClip}
-            sourceVideoPath={sources.get(selectedClip.sourceId)?.video_file ?? ''}
+            sourceVideoPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.video_file ?? '')}
+            energyProfile={sources.get(selectedClip.sourceId)?.energy_profile ?? []}
             onFrameChange={handleFrameChange}
             onNextClip={handleNextClip}
             onPrevClip={handlePrevClip}

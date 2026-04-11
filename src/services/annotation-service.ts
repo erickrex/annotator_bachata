@@ -125,6 +125,10 @@ export class AnnotationServiceImpl {
     return this.annotations.get(clipId) ?? null;
   }
 
+  deleteAnnotation(clipId: string): void {
+    this.annotations.delete(clipId);
+  }
+
   /**
    * Update annotation fields with partial merge.
    * Auto-populates computed fields, validates, and prevents

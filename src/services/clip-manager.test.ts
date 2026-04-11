@@ -112,6 +112,14 @@ describe('createClips', () => {
     expect(clips[0].beatMarkerFrames[0]).toBe(0);
     expect(clips[0].beatMarkerFrames[7]).toBe(70);
   });
+
+  it('uses provided beat grid frames when available', () => {
+    const hierarchy = makeCycles(1);
+    const beatGridFrames = [0, 7, 19, 30, 41, 53, 62, 70];
+    const clips = createClips('src1', hierarchy, 8, 30, beatGridFrames);
+
+    expect(clips[0].beatMarkerFrames).toEqual(beatGridFrames);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -154,14 +162,14 @@ describe('mergeClips', () => {
     expect(merged.clipId).toBe('src1_c001_016');
   });
 
-  it('concatenates beat markers from both clips', () => {
+  it('offsets beat markers from the second clip onto the merged timeline', () => {
     const hierarchy = makeCycles(2);
     const clips = createClips('src1', hierarchy, 8, 30);
     const merged = mergeClips(clips[0], clips[1]);
 
     expect(merged.beatMarkerFrames).toEqual([
       ...clips[0].beatMarkerFrames,
-      ...clips[1].beatMarkerFrames,
+      ...clips[1].beatMarkerFrames.map((frame) => frame + clips[0].remotion.durationInFrames),
     ]);
   });
 });
@@ -213,6 +221,28 @@ describe('splitClip', () => {
     expect(b.clipId).not.toBe(clips[0].clipId);
     expect(a.clipId).not.toBe(b.clipId);
   });
+
+  it('re-bases beat markers for the second half when splitting a non-zero clip', () => {
+    const hierarchy = makeCycles(4);
+    const clips = createClips('src1', hierarchy, 16, 30);
+    const [a, b] = splitClip(clips[1], 240, hierarchy);
+
+    expect(a.remotion.fromFrame).toBe(160);
+    expect(a.beatMarkerFrames[0]).toBe(0);
+    expect(a.beatMarkerFrames[a.beatMarkerFrames.length - 1]).toBe(70);
+    expect(b.remotion.fromFrame).toBe(240);
+    expect(b.beatMarkerFrames[0]).toBe(0);
+    expect(b.beatMarkerFrames[b.beatMarkerFrames.length - 1]).toBe(70);
+  });
+
+  it('throws when trying to split a clip with fewer than two cycles', () => {
+    const hierarchy = makeCycles(2);
+    const clips = createClips('src1', hierarchy, 8, 30);
+
+    expect(() => splitClip(clips[0], 40, hierarchy)).toThrow(
+      'Clip must contain at least two cycles to be split.',
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -259,6 +289,20 @@ describe('adjustBoundary', () => {
 
   it('filters beat markers to the new range', () => {
     const adjusted = adjustBoundary(clip, 20, 50, beatGrid);
-    expect(adjusted.beatMarkerFrames).toEqual([20, 30, 40, 50]);
+    expect(adjusted.beatMarkerFrames).toEqual([0, 10, 20, 30]);
+  });
+
+  it('re-bases beat markers when adjusting a non-zero clip', () => {
+    const nonZeroClip: VirtualClipDef = {
+      ...clip,
+      clipId: 'src1_c003_008',
+      remotion: { fromFrame: 160, durationInFrames: 71, fps: 30 },
+      beatMarkerFrames: [0, 10, 20, 30, 40, 50, 60, 70],
+      cycleNumber: 3,
+    };
+
+    const adjusted = adjustBoundary(nonZeroClip, 180, 210, [160, 170, 180, 190, 200, 210, 220, 230]);
+    expect(adjusted.remotion.fromFrame).toBe(180);
+    expect(adjusted.beatMarkerFrames).toEqual([0, 10, 20, 30]);
   });
 });

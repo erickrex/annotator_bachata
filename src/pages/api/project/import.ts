@@ -2,11 +2,12 @@
 // Requirements: 13.3, 13.4
 
 import type { APIRoute } from 'astro';
-import { getAppState, autoSave, jsonResponse, errorResponse } from '../../../services/app-state.js';
+import { autoSave, jsonResponse, errorResponse, restoreProjectState } from '../../../services/app-state.js';
 import type { AnnotationProjectFile } from '../../../types/index.js';
+import type { ExtendedProjectFile } from '../../../services/project-service.js';
 
 export const POST: APIRoute = async ({ request }) => {
-  let projectJson: AnnotationProjectFile;
+  let projectJson: AnnotationProjectFile | ExtendedProjectFile;
   try {
     projectJson = await request.json();
   } catch {
@@ -17,8 +18,7 @@ export const POST: APIRoute = async ({ request }) => {
     return errorResponse('Invalid project file format. Expected schema_version, sources, and clips.');
   }
 
-  const state = getAppState();
-  const result = state.annotationService.importProject(projectJson, state.projectDir);
+  const result = restoreProjectState(projectJson);
 
   if (!result.success) {
     return jsonResponse(

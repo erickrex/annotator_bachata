@@ -4,7 +4,13 @@
 import type { APIRoute } from 'astro';
 import { shiftBeatGrid, buildCycles } from '../../../services/cycle-builder.js';
 import { createClips } from '../../../services/clip-manager.js';
-import { getAppState, autoSave, jsonResponse, errorResponse } from '../../../services/app-state.js';
+import {
+  getAppState,
+  autoSave,
+  jsonResponse,
+  errorResponse,
+  replaceClipsForSource,
+} from '../../../services/app-state.js';
 
 export const PUT: APIRoute = async ({ request }) => {
   let body: { sourceId?: string; offsetMs?: number };
@@ -46,16 +52,10 @@ export const PUT: APIRoute = async ({ request }) => {
   );
   state.cycles.set(sourceId, cycles);
 
-  // Regenerate clips
-  for (const [clipId, clip] of state.clips) {
-    if (clip.sourceId === sourceId) {
-      state.clips.delete(clipId);
-    }
-  }
-  const newClips = createClips(sourceId, cycles, 16, source.fps);
-  for (const clip of newClips) {
-    state.clips.set(clip.clipId, clip);
-  }
+  const beatCount =
+    Array.from(state.clips.values()).find((clip) => clip.sourceId === sourceId)?.beatCount ?? 16;
+  const newClips = createClips(sourceId, cycles, beatCount as 8 | 16 | 32, source.fps, shifted.frames);
+  replaceClipsForSource(sourceId, newClips);
 
   autoSave();
 

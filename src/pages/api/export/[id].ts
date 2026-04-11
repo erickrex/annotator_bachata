@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ params }) => {
   const outputDir = join(state.projectDir, 'exports');
 
   try {
-    const outputPath = await exportClip(clip, sourceVideoPath, outputDir);
+    const outputPath = await exportClip(clip, sourceVideoPath, outputDir, source.energy_profile);
     return jsonResponse({ clipId: id, outputPath });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

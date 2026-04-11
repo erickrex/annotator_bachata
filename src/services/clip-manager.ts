@@ -58,14 +58,11 @@ export function createClips(
   cycles: CycleHierarchy,
   beatCount: 8 | 16 | 32,
   fps: number,
+  beatGridFrames?: number[],
 ): VirtualClipDef[] {
   const cyclesPerClip = beatCount / BEATS_PER_CYCLE;
   const allCycles = cycles.cycles8;
   const clipCount = Math.floor(allCycles.length / cyclesPerClip);
-
-  // Build a flat beat-grid-frames array from all cycles for marker collection.
-  // We need the original beat grid frames; reconstruct from cycle beat indices.
-  // Since we don't have the raw beatGridFrames array, we derive markers from cycles directly.
 
   const clips: VirtualClipDef[] = [];
 
@@ -84,21 +81,18 @@ export function createClips(
     // should include that frame: endFrame - fromFrame + 1.
     const durationInFrames = endFrame - fromFrame + 1;
 
-    // Beat markers: all beat frames within the group's cycles
+    // Beat markers: prefer the original beat grid when available so markers stay
+    // faithful to the analyzer output. Fall back to interpolation in tests and
+    // callers that only provide cycle boundaries.
     const beatMarkerFrames: number[] = [];
     for (const cycle of group) {
-      // We don't have the raw beatGridFrames, but we can compute from cycle info.
-      // Each cycle has startBeatIndex..endBeatIndex (8 beats).
-      // The frame for each beat isn't stored per-beat in the cycle, only start/end frames.
-      // We'll store the startFrame and endFrame of each cycle as markers,
-      // but the proper approach needs the full beat grid.
-      // For now, we note that the caller should provide beat grid frames via the hierarchy.
-      // Actually, looking at the Cycle type: startFrame and endFrame correspond to
-      // beatGridFrames[startBeatIndex] and beatGridFrames[endBeatIndex].
-      // We need intermediate beat frames too. Let's interpolate from cycle boundaries.
-      // Better: use the startFrame/endFrame and interpolate evenly for 8 beats.
-      const beatFrames = interpolateBeatFrames(cycle, BEATS_PER_CYCLE);
-      beatMarkerFrames.push(...beatFrames);
+      if (beatGridFrames && beatGridFrames.length > cycle.endBeatIndex) {
+        beatMarkerFrames.push(
+          ...beatGridFrames.slice(cycle.startBeatIndex, cycle.endBeatIndex + 1),
+        );
+      } else {
+        beatMarkerFrames.push(...interpolateBeatFrames(cycle, BEATS_PER_CYCLE));
+      }
     }
 
     // Convert beat markers from source-absolute to clip-relative frame space.
@@ -148,6 +142,7 @@ export function mergeClips(
   clipB: VirtualClipDef,
 ): VirtualClipDef {
   const mergedBeatCount = clipA.beatCount + clipB.beatCount;
+  const clipBOffset = clipA.remotion.durationInFrames;
 
   return {
     clipId: makeClipId(clipA.sourceId, clipA.cycleNumber, mergedBeatCount),
@@ -158,7 +153,10 @@ export function mergeClips(
       durationInFrames: clipA.remotion.durationInFrames + clipB.remotion.durationInFrames,
       fps: clipA.remotion.fps,
     },
-    beatMarkerFrames: [...clipA.beatMarkerFrames, ...clipB.beatMarkerFrames],
+    beatMarkerFrames: [
+      ...clipA.beatMarkerFrames,
+      ...clipB.beatMarkerFrames.map((frame) => frame + clipBOffset),
+    ],
     cycleNumber: clipA.cycleNumber,
     beatCount: mergedBeatCount,
   };
@@ -185,6 +183,10 @@ export function splitClip(
     (c) => c.startFrame >= clipFrom && c.endFrame <= clipEnd,
   );
 
+  if (clipCycles.length < 2) {
+    throw new Error('Clip must contain at least two cycles to be split.');
+  }
+
   // Find the cycle boundary closest to splitAtFrame.
   // Cycle boundaries are the startFrame of each cycle (except the first, which is the clip start).
   // We want to split between two cycles, so we look at startFrames of cycles after the first.
@@ -205,10 +207,13 @@ export function splitClip(
   const beatCountB = cyclesB.length * BEATS_PER_CYCLE;
 
   const splitFrame = cyclesB[0].startFrame;
+  const splitOffset = splitFrame - clipFrom;
 
   // Split beat markers
-  const markersA = clip.beatMarkerFrames.filter((f) => f < splitFrame);
-  const markersB = clip.beatMarkerFrames.filter((f) => f >= splitFrame);
+  const markersA = clip.beatMarkerFrames.filter((f) => f < splitOffset);
+  const markersB = clip.beatMarkerFrames
+    .filter((f) => f >= splitOffset)
+    .map((f) => f - splitOffset);
 
   const clipADef: VirtualClipDef = {
     clipId: makeClipId(clip.sourceId, cyclesA[0].cycleNumber, beatCountA),
@@ -268,10 +273,9 @@ export function adjustBoundary(
 
   const durationInFrames = adjustedEnd - adjustedFrom + 1;
 
-  // Filter beat markers to the new range
-  const beatMarkerFrames = clip.beatMarkerFrames.filter(
-    (f) => f >= adjustedFrom && f <= adjustedEnd,
-  );
+  const beatMarkerFrames = beatGridFrames
+    .filter((frame) => frame >= adjustedFrom && frame <= adjustedEnd)
+    .map((frame) => frame - adjustedFrom);
 
   return {
     ...clip,

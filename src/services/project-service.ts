@@ -172,7 +172,9 @@ export function createDebouncedSaver(
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
-      void doSave();
+      void doSave().catch((error) => {
+        console.error('Failed to persist project state', error);
+      });
     }, delayMs);
   }
 
