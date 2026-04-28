@@ -17,6 +17,9 @@ vi.mock('node:fs/promises', () => ({
 vi.mock('./app-state.js', () => ({
   getAppState: () => ({
     projectDir: '/project',
+    annotationService: {
+      getSource: () => undefined,
+    },
   }),
 }));
 
@@ -67,6 +70,7 @@ describe('export-service', () => {
         durationInFrames: 151,
         defaultProps: expect.objectContaining({
           src: '/project/sources/src1.mp4',
+          audioSrc: undefined,
           startFrame: 120,
           beatMarkers: [0, 15, 30],
           energyProfile: [0.1, 0.2, 0.3],

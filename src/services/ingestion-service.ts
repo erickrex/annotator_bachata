@@ -1,5 +1,6 @@
 /**
- * Ingestion Service — downloads YouTube videos via yt-dlp and extracts metadata via ffprobe.
+ * Ingestion Service — downloads YouTube videos via yt-dlp (run with `uv` from pyproject.toml)
+ * and extracts metadata via ffprobe.
  *
  * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 15.1, 16.7
  */
@@ -10,11 +11,31 @@ import { join } from 'node:path';
 import type { DownloadProgress, SourceMetadata } from '../types/index.js';
 import { validateUrl } from './url-validator.js';
 
-/** Timeout for the download process (5 minutes). */
-const DOWNLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+/** Project root for `uv run` so pyproject.toml / uv.lock resolve (matches app-state projectDir). */
+function projectRoot(): string {
+  return process.env.PROJECT_DIR ?? process.cwd();
+}
+
+/**
+ * Spawn yt-dlp from the uv-managed environment declared in pyproject.toml.
+ * Avoids relying on a global `yt-dlp` on PATH (e.g. Cursor’s embedded browser / minimal PATH).
+ */
+function spawnYtDlp(args: string[]) {
+  return spawn('uv', ['run', 'yt-dlp', ...args], {
+    cwd: projectRoot(),
+    env: process.env,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+}
+
+/** Timeout for the download process (10 minutes). */
+const DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
 
 /** Timeout for ffprobe metadata extraction (30 seconds). */
 const FFPROBE_TIMEOUT_MS = 30 * 1000;
+
+/** Timeout for yt-dlp metadata fetch (120 seconds — YouTube negotiation can be slow). */
+const YTDLP_METADATA_TIMEOUT_MS = 120 * 1000;
 
 // yt-dlp progress line pattern:
 // [download]  45.2% of ~123.45MiB at 1.23MiB/s ETA 00:42
@@ -43,6 +64,7 @@ interface YtDlpInfo {
  * Run ffprobe on a video file and extract stream/format metadata.
  */
 async function ffprobe(videoPath: string): Promise<FfprobeResult> {
+  console.log(`[ingest] ffprobe: starting for ${videoPath}`);
   return new Promise<FfprobeResult>((resolve, reject) => {
     const proc = spawn('ffprobe', [
       '-v', 'quiet',
@@ -57,6 +79,7 @@ async function ffprobe(videoPath: string): Promise<FfprobeResult> {
 
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
+      console.error('[ingest] ffprobe: timed out');
       reject(new Error('ffprobe timed out'));
     }, FFPROBE_TIMEOUT_MS);
 
@@ -65,11 +88,13 @@ async function ffprobe(videoPath: string): Promise<FfprobeResult> {
 
     proc.on('error', (err) => {
       clearTimeout(timer);
+      console.error(`[ingest] ffprobe: failed to start — ${err.message}`);
       reject(new Error(`ffprobe failed to start: ${err.message}`));
     });
 
     proc.on('close', (code) => {
       clearTimeout(timer);
+      console.log(`[ingest] ffprobe: exited with code ${code}`);
       if (code !== 0) {
         reject(new Error(`ffprobe exited with code ${code}: ${stderr.trim()}`));
         return;
@@ -140,27 +165,34 @@ async function ffprobe(videoPath: string): Promise<FfprobeResult> {
  * Fetch video metadata (title, channel, upload date) via yt-dlp --dump-json.
  */
 async function fetchVideoInfo(url: string): Promise<YtDlpInfo> {
+  console.log(`[ingest] fetchVideoInfo: starting for ${url}`);
   return new Promise<YtDlpInfo>((resolve, reject) => {
-    const proc = spawn('yt-dlp', ['--dump-json', '--no-download', url]);
+    const proc = spawnYtDlp(['--dump-json', '--no-download', '--no-playlist', '--socket-timeout', '30', url]);
 
     let stdout = '';
     let stderr = '';
 
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
+      console.error(`[ingest] fetchVideoInfo: timed out after ${YTDLP_METADATA_TIMEOUT_MS / 1000}s`);
       reject(new Error('yt-dlp metadata fetch timed out'));
-    }, FFPROBE_TIMEOUT_MS);
+    }, YTDLP_METADATA_TIMEOUT_MS);
 
     proc.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
-    proc.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
+    proc.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+      console.log(`[ingest] fetchVideoInfo stderr: ${chunk.toString().trim()}`);
+    });
 
     proc.on('error', (err) => {
       clearTimeout(timer);
-      reject(new Error(`yt-dlp failed to start: ${err.message}`));
+      console.error(`[ingest] fetchVideoInfo: failed to start — ${err.message}`);
+      reject(new Error(`uv run yt-dlp failed to start: ${err.message}`));
     });
 
     proc.on('close', (code) => {
       clearTimeout(timer);
+      console.log(`[ingest] fetchVideoInfo: exited with code ${code}`);
       if (code !== 0) {
         const msg = stderr.trim();
         // Detect specific error types for better user messages
@@ -195,7 +227,9 @@ async function fetchVideoInfo(url: string): Promise<YtDlpInfo> {
           channel: info.channel ?? info.uploader ?? 'Unknown',
           uploadDate,
         });
+        console.log(`[ingest] fetchVideoInfo: success — "${info.title}" by ${info.channel ?? info.uploader}`);
       } catch (err) {
+        console.error(`[ingest] fetchVideoInfo: JSON parse failed — ${(err as Error).message}`);
         reject(new Error(`Failed to parse yt-dlp JSON: ${(err as Error).message}`));
       }
     });
@@ -215,7 +249,8 @@ function downloadVideo(
   url: string,
   outputPath: string,
 ): { progress: AsyncGenerator<DownloadProgress, void>; done: Promise<void> } {
-  const proc = spawn('yt-dlp', [
+  console.log(`[ingest] downloadVideo: starting — ${url} → ${outputPath}`);
+  const proc = spawnYtDlp([
     '-f', 'bestvideo[height<=1080]+bestaudio/best[height<=1080]',
     '--merge-output-format', 'mp4',
     '--progress',
@@ -229,18 +264,17 @@ function downloadVideo(
 
   const timer = setTimeout(() => {
     proc.kill('SIGKILL');
+    console.error('[ingest] downloadVideo: timed out after 5 minutes');
     rejectFn?.(new Error('Video download timed out after 5 minutes'));
   }, DOWNLOAD_TIMEOUT_MS);
 
-  // Collect progress lines from stderr
+  // Collect progress lines from stdout (yt-dlp writes all output to stdout)
   const progressLines: string[] = [];
   let progressResolve: (() => void) | undefined;
   let processExited = false;
 
-  proc.stderr.on('data', (chunk: Buffer) => {
+  proc.stdout.on('data', (chunk: Buffer) => {
     const text = chunk.toString();
-    stderr += text;
-    // yt-dlp writes progress to stderr, one line per update when --newline is used
     const lines = text.split('\n').filter((l) => l.trim().length > 0);
     for (const line of lines) {
       progressLines.push(line);
@@ -248,10 +282,15 @@ function downloadVideo(
     progressResolve?.();
   });
 
+  proc.stderr.on('data', (chunk: Buffer) => {
+    stderr += chunk.toString();
+  });
+
   proc.on('error', (err) => {
     clearTimeout(timer);
     processExited = true;
-    rejectFn?.(new Error(`yt-dlp failed to start: ${err.message}`));
+    console.error(`[ingest] downloadVideo: failed to start — ${err.message}`);
+    rejectFn?.(new Error(`uv run yt-dlp failed to start: ${err.message}`));
     progressResolve?.();
   });
 
@@ -261,9 +300,10 @@ function downloadVideo(
       clearTimeout(timer);
       processExited = true;
       progressResolve?.();
+      console.log(`[ingest] downloadVideo: exited with code ${code}`);
 
       if (code !== 0) {
-        const msg = stderr.trim();
+        const msg = (stderr.trim() || progressLines.join('\n')).trim();
         if (msg.includes('age-restricted') || msg.includes('Sign in to confirm your age')) {
           reject(new Error(`Video is age-restricted and cannot be downloaded: ${msg}`));
         } else if (msg.includes('Private video') || msg.includes('private video')) {
@@ -300,6 +340,9 @@ function downloadVideo(
     }
   }
 
+  // Prevent unhandled rejection if timeout fires before the caller awaits donePromise
+  donePromise.catch(() => {});
+
   return { progress: progressGenerator(), done: donePromise };
 }
 
@@ -307,8 +350,9 @@ function downloadVideo(
  * Spawn yt-dlp to extract audio as WAV.
  */
 async function extractAudio(url: string, outputPath: string): Promise<void> {
+  console.log(`[ingest] extractAudio: starting — ${url} → ${outputPath}`);
   return new Promise<void>((resolve, reject) => {
-    const proc = spawn('yt-dlp', [
+    const proc = spawnYtDlp([
       '-x',
       '--audio-format', 'wav',
       '-o', outputPath,
@@ -316,23 +360,28 @@ async function extractAudio(url: string, outputPath: string): Promise<void> {
     ]);
 
     let stderr = '';
+    let stdout = '';
 
     const timer = setTimeout(() => {
       proc.kill('SIGKILL');
+      console.error('[ingest] extractAudio: timed out');
       reject(new Error('Audio extraction timed out'));
     }, DOWNLOAD_TIMEOUT_MS);
 
+    proc.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
     proc.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
 
     proc.on('error', (err) => {
       clearTimeout(timer);
-      reject(new Error(`yt-dlp audio extraction failed to start: ${err.message}`));
+      console.error(`[ingest] extractAudio: failed to start — ${err.message}`);
+      reject(new Error(`uv run yt-dlp audio extraction failed to start: ${err.message}`));
     });
 
     proc.on('close', (code) => {
       clearTimeout(timer);
+      console.log(`[ingest] extractAudio: exited with code ${code}`);
       if (code !== 0) {
-        reject(new Error(`yt-dlp audio extraction failed (exit ${code}): ${stderr.trim()}`));
+        reject(new Error(`yt-dlp audio extraction failed (exit ${code}): ${(stderr || stdout).trim()}`));
       } else {
         resolve();
       }
@@ -352,15 +401,20 @@ export async function* download(
   url: string,
   outputDir: string,
 ): AsyncGenerator<DownloadProgress, SourceMetadata> {
+  console.log(`[ingest] download: pipeline starting — url=${url} dir=${outputDir}`);
+
   // 1. Validate URL
   const validation = validateUrl(url);
   if (!validation.valid || !validation.videoId) {
+    console.error(`[ingest] download: invalid URL — ${url}`);
     throw new Error(`Invalid YouTube URL: ${url}`);
   }
 
   const videoId = validation.videoId;
   const sourceId = `yt_${videoId}`;
   const sourcesDir = join(outputDir, 'sources');
+
+  console.log(`[ingest] download: videoId=${videoId} sourceId=${sourceId}`);
 
   // Ensure output directory exists
   await mkdir(sourcesDir, { recursive: true });
@@ -369,9 +423,11 @@ export async function* download(
   const audioFile = join(sourcesDir, `${sourceId}.wav`);
 
   // 2. Fetch video info (title, channel, upload date)
+  console.log('[ingest] download: step 2 — fetching video info');
   const info = await fetchVideoInfo(url);
 
   // 3. Download video with progress tracking
+  console.log('[ingest] download: step 3 — downloading video');
   const { progress, done } = downloadVideo(url, videoFile);
 
   // Yield progress events as they arrive
@@ -381,12 +437,17 @@ export async function* download(
 
   // Wait for the download process to fully complete (may throw on error)
   await done;
+  console.log('[ingest] download: step 3 complete — video downloaded');
 
   // 4. Extract audio as WAV
+  console.log('[ingest] download: step 4 — extracting audio');
   await extractAudio(url, audioFile);
+  console.log('[ingest] download: step 4 complete — audio extracted');
 
   // 5. Read video metadata via ffprobe
+  console.log('[ingest] download: step 5 — running ffprobe');
   const meta = await ffprobe(videoFile);
+  console.log(`[ingest] download: step 5 complete — ${meta.width}x${meta.height} ${meta.fps}fps ${meta.durationSeconds}s`);
 
   // 6. Build and return SourceMetadata
   const sourceMetadata: SourceMetadata = {

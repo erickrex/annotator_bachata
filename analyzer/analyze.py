@@ -37,9 +37,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--fps",
-        type=int,
-        default=30,
-        help="Video frame rate for timestamp-to-frame conversion (default: 30).",
+        type=float,
+        default=30.0,
+        help="Video frame rate for timestamp-to-frame conversion (default: 30). "
+        "Fractional rates (e.g. 29.97, 23.976) are supported.",
     )
     return parser.parse_args()
 
@@ -135,7 +136,7 @@ def _identify_downbeat(
     return best_offset
 
 
-def analyze(wav_path: str, fps: int) -> dict:
+def analyze(wav_path: str, fps: float) -> dict:
     """Run librosa analysis on the given WAV file.
 
     Returns a dict matching the JSON output contract:

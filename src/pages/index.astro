@@ -153,6 +153,8 @@ import Layout from '../layouts/Layout.astro';
     const url = urlInput.value.trim();
     if (!url) return;
 
+    console.log(`[ingest-ui] submitting URL: ${url}`);
+
     // Reset UI
     errorMsg.style.display = 'none';
     completeSection.style.display = 'none';
@@ -163,6 +165,7 @@ import Layout from '../layouts/Layout.astro';
     submitBtn.disabled = true;
 
     try {
+      console.log('[ingest-ui] sending POST /api/ingest');
       const res = await fetch('/api/ingest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -170,6 +173,7 @@ import Layout from '../layouts/Layout.astro';
       });
 
       if (!res.ok) {
+        console.error(`[ingest-ui] HTTP error: ${res.status}`);
         const data = await res.json().catch(() => ({ error: 'Request failed' }));
         throw new Error(data.error || `HTTP ${res.status}`);
       }
@@ -177,6 +181,7 @@ import Layout from '../layouts/Layout.astro';
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      console.log('[ingest-ui] reading SSE stream');
 
       while (true) {
         const { done, value } = await reader.read();
@@ -191,6 +196,7 @@ import Layout from '../layouts/Layout.astro';
           if (!match) continue;
 
           const event = JSON.parse(match[1]);
+          console.log(`[ingest-ui] SSE event: ${event.type}`, event);
 
           if (event.type === 'progress') {
             const pct = Math.round(event.percent ?? 0);
@@ -207,6 +213,7 @@ import Layout from '../layouts/Layout.astro';
             }
 
             // Phase 2: Analyze
+            console.log(`[ingest-ui] phase 2: analyzing sourceId=${sourceId}`);
             progressPct.textContent = '';
             progressBar.style.width = '100%';
             progressDetail.textContent = '';
@@ -214,12 +221,14 @@ import Layout from '../layouts/Layout.astro';
             progressLabel.textContent = 'Analyzing…';
 
             const analyzeRes = await fetch(`/api/analyze/${sourceId}`, { method: 'POST' });
+            console.log(`[ingest-ui] analyze response: ${analyzeRes.status}`);
             if (!analyzeRes.ok) {
               const err = await analyzeRes.json().catch(() => ({ error: 'Analysis failed' }));
               throw new Error(err.error || `Analysis failed (HTTP ${analyzeRes.status})`);
             }
 
             // Phase 3: Generate clips
+            console.log('[ingest-ui] phase 3: generating clips');
             progressLabel.textContent = 'Generating clips…';
 
             const generateRes = await fetch('/api/clips/generate', {
@@ -228,11 +237,13 @@ import Layout from '../layouts/Layout.astro';
               body: JSON.stringify({ sourceId, beatCount: 16 }),
             });
             if (!generateRes.ok) {
+              console.error(`[ingest-ui] clip generation failed: ${generateRes.status}`);
               const err = await generateRes.json().catch(() => ({ error: 'Clip generation failed' }));
               throw new Error(err.error || `Clip generation failed (HTTP ${generateRes.status})`);
             }
 
             // All three steps succeeded — show review link
+            console.log('[ingest-ui] all phases complete');
             progressSection.style.display = 'none';
             completeSection.style.display = 'block';
           } else if (event.type === 'error') {
@@ -241,6 +252,7 @@ import Layout from '../layouts/Layout.astro';
         }
       }
     } catch (err: any) {
+      console.error('[ingest-ui] error:', err);
       progressSection.style.display = 'none';
       errorMsg.textContent = err.message || 'An error occurred';
       errorMsg.style.display = 'block';

@@ -6,10 +6,12 @@ import { download, validateUrl } from '../../services/ingestion-service.js';
 import { getAppState, autoSave } from '../../services/app-state.js';
 
 export const POST: APIRoute = async ({ request }) => {
+  console.log('[api/ingest] POST received');
   let body: { url?: string };
   try {
     body = await request.json();
   } catch {
+    console.error('[api/ingest] invalid JSON body');
     return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -18,6 +20,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const url = body.url;
   if (!url || typeof url !== 'string') {
+    console.error('[api/ingest] missing url field');
     return new Response(JSON.stringify({ error: 'Missing required field: url' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -26,6 +29,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const validation = validateUrl(url);
   if (!validation.valid) {
+    console.error(`[api/ingest] invalid YouTube URL: ${url}`);
     return new Response(JSON.stringify({ error: `Invalid YouTube URL: ${url}` }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -34,6 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const state = getAppState();
   const encoder = new TextEncoder();
+  console.log(`[api/ingest] starting download pipeline for: ${url}`);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -76,12 +81,14 @@ export const POST: APIRoute = async ({ request }) => {
         });
 
         autoSave();
+        console.log(`[api/ingest] pipeline complete — sourceId=${metadata.sourceId}`);
 
         const doneEvent = `data: ${JSON.stringify({ type: 'complete', metadata })}\n\n`;
         controller.enqueue(encoder.encode(doneEvent));
         controller.close();
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        console.error(`[api/ingest] pipeline error: ${message}`);
         const errorEvent = `data: ${JSON.stringify({ type: 'error', error: message })}\n\n`;
         controller.enqueue(encoder.encode(errorEvent));
         controller.close();

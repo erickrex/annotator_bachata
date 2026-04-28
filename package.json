@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.8",
     "@astrojs/node": "^9.5.5",
     "@astrojs/react": "^4.2.0",
     "@remotion/cli": "^4.0.296",
@@ -26,7 +27,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "fast-check": "^4.1.1",
-    "typescript": "^5.8.0",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.1"
   }
 }

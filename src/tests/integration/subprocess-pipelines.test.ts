@@ -1,12 +1,12 @@
 /**
  * Integration tests for subprocess pipelines.
  *
- * These tests verify that the external tool integrations (yt-dlp, Python/librosa,
+ * These tests verify that the external tool integrations (uv-run yt-dlp, Python/librosa,
  * Remotion) are correctly wired up. They are skipped by default because they
  * require external dependencies to be installed:
  *
- *   - yt-dlp: YouTube video downloader binary
- *   - uv + Python: Python package manager and runtime (for librosa analyzer)
+ *   - uv: runs `yt-dlp` and the Python analyzer from pyproject.toml / uv.lock
+ *   - Python (via uv): librosa analyzer
  *   - ffmpeg: Media processing (used by Remotion renderer)
  *   - @remotion/renderer: Remotion rendering package
  *
@@ -14,7 +14,7 @@
  *   INTEGRATION=1 npx vitest run src/tests/integration/
  *
  * The tests are designed to be fast and offline:
- *   - yt-dlp: only checks binary availability (--version), no actual downloads
+ *   - yt-dlp: only checks `uv run yt-dlp --version`, no actual downloads
  *   - librosa: creates a small WAV programmatically and runs the analyzer
  *   - Remotion: only verifies the renderMedia import resolves
  *
@@ -109,23 +109,25 @@ function createTestWav(filePath: string): void {
 const runIntegration = process.env.INTEGRATION === '1';
 const describeIntegration = runIntegration ? describe : describe.skip;
 
-const hasYtDlp = runIntegration && binaryExists('yt-dlp');
 const hasUv = runIntegration && binaryExists('uv');
 
 describeIntegration('Subprocess Pipeline Integration Tests', () => {
 
   // -------------------------------------------------------------------------
-  // 1. yt-dlp subprocess — verify binary exists and responds to --version
+  // 1. yt-dlp via uv — matches ingestion-service (uv run yt-dlp from pyproject)
   //    Validates: Requirement 1.1
-  //    Skipped if yt-dlp is not installed on the system.
+  //    Skipped if uv is not installed or deps not synced (`uv sync`).
   // -------------------------------------------------------------------------
-  const describeYtDlp = hasYtDlp ? describe : describe.skip;
+  const describeYtDlp = hasUv ? describe : describe.skip;
 
-  describeYtDlp('yt-dlp subprocess', () => {
-    it('should return a version string from yt-dlp --version', () => {
-      const output = execFileSync('yt-dlp', ['--version'], {
+  describeYtDlp('yt-dlp subprocess (uv run)', () => {
+    const repoRoot = process.cwd();
+
+    it('should return a version string from uv run yt-dlp --version', () => {
+      const output = execFileSync('uv', ['run', 'yt-dlp', '--version'], {
+        cwd: repoRoot,
         encoding: 'utf-8',
-        timeout: 10_000,
+        timeout: 60_000,
       }).trim();
 
       // yt-dlp version looks like "2024.01.01" or similar date-based format
@@ -133,9 +135,10 @@ describeIntegration('Subprocess Pipeline Integration Tests', () => {
     });
 
     it('should accept --help without error (validates CLI interface)', () => {
-      const result = execFileSync('yt-dlp', ['--help'], {
+      const result = execFileSync('uv', ['run', 'yt-dlp', '--help'], {
+        cwd: repoRoot,
         encoding: 'utf-8',
-        timeout: 10_000,
+        timeout: 60_000,
       });
 
       // yt-dlp help output contains "usage:" (case-insensitive)
@@ -166,6 +169,7 @@ describeIntegration('Subprocess Pipeline Integration Tests', () => {
     it('should run the analyzer and produce valid JSON output', async () => {
       const result = await new Promise<{ stdout: string; stderr: string; code: number | null }>((resolve, reject) => {
         const proc = spawn('uv', ['run', 'python', '-m', 'analyzer.analyze', wavPath, '--fps', '30'], {
+          cwd: process.cwd(),
           stdio: ['pipe', 'pipe', 'pipe'],
         });
 
@@ -224,6 +228,7 @@ describeIntegration('Subprocess Pipeline Integration Tests', () => {
     it('should fail with non-zero exit code for a missing file', async () => {
       const result = await new Promise<{ code: number | null; stderr: string }>((resolve, reject) => {
         const proc = spawn('uv', ['run', 'python', '-m', 'analyzer.analyze', '/nonexistent/file.wav', '--fps', '30'], {
+          cwd: process.cwd(),
           stdio: ['pipe', 'pipe', 'pipe'],
         });
 

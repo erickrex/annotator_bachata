@@ -6,6 +6,8 @@ import type { VirtualClipDef } from '../types/index.js';
 export interface PlayerWrapperProps {
   clip: VirtualClipDef;
   sourceVideoPath: string;
+  /** Extracted WAV (same timeline as video); when set, preview plays this and mutes the MP4. */
+  sourceAudioPath?: string;
   energyProfile: number[];
   onFrameChange?: (frame: number) => void;
   onNextClip?: () => void;
@@ -15,6 +17,7 @@ export interface PlayerWrapperProps {
 export const PlayerWrapper: React.FC<PlayerWrapperProps> = ({
   clip,
   sourceVideoPath,
+  sourceAudioPath,
   energyProfile,
   onFrameChange,
   onNextClip,
@@ -102,9 +105,12 @@ export const PlayerWrapper: React.FC<PlayerWrapperProps> = ({
         fps={remotion.fps}
         controls
         loop
+        bufferStateDelayInMilliseconds={500}
+        numberOfSharedAudioTags={6}
         style={{ width: '100%', aspectRatio: '16/9', background: '#000' }}
         inputProps={{
           src: sourceVideoPath,
+          audioSrc: sourceAudioPath && sourceAudioPath.length > 0 ? sourceAudioPath : undefined,
           startFrame: remotion.fromFrame,
           durationInFrames: remotion.durationInFrames,
           beatMarkers: beatMarkerFrames,

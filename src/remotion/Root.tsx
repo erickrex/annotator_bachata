@@ -19,6 +19,7 @@ export const Root: React.FC = () => {
       height={1080}
       defaultProps={{
         src: '',
+        audioSrc: undefined as string | undefined,
         startFrame: 0,
         durationInFrames: 300,
         beatMarkers: [] as number[],

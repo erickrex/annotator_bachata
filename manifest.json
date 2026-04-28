@@ -1,0 +1,18 @@
+{
+  "project_name": "Bachata Clip Library",
+  "created_at": "2026-04-12T03:01:19.009Z",
+  "updated_at": "2026-04-12T03:15:45.833Z",
+  "sources_count": 1,
+  "clips_total": 16,
+  "clips_by_status": {
+    "pending": 16,
+    "discarded": 0,
+    "reviewed": 0,
+    "in_progress": 0,
+    "annotated": 0
+  },
+  "annotation_completeness": 0.5217391304347825,
+  "sources": [
+    "yt_RcaNY_3pLqg"
+  ]
+}

@@ -35,9 +35,11 @@ export const ReviewApp: React.FC = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [completeness, setCompleteness] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadReviewState = useCallback(async (preferredClipId: string | null = null) => {
     try {
+      setLoadError(null);
       const res = await fetch('/api/clips');
       if (!res.ok) {
         throw new Error(`Failed to load clips (HTTP ${res.status})`);
@@ -74,6 +76,7 @@ export const ReviewApp: React.FC = () => {
       setCompleteness(nextSelectedClipId ? nextCompletenessMap.get(nextSelectedClipId) ?? 0 : 0);
     } catch (error) {
       console.error('Failed to load review state', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load clips');
     }
   }, []);
 
@@ -215,11 +218,28 @@ export const ReviewApp: React.FC = () => {
       style={{
         display: 'grid',
         gridTemplateColumns: '280px 1fr 340px',
+        flex: 1,
+        minHeight: 0,
+        width: '100%',
         height: '100%',
         gap: '1px',
         background: '#1a1a1a',
       }}
     >
+      {loadError && (
+        <div
+          style={{
+            gridColumn: '1 / -1',
+            padding: 12,
+            background: '#3a1515',
+            color: '#ffb4b4',
+            fontSize: 13,
+            borderBottom: '1px solid #622',
+          }}
+        >
+          {loadError}
+        </div>
+      )}
       <div style={{ background: '#0a0a0a', overflowY: 'auto', padding: 8, borderRight: '1px solid #222' }}>
         <ClipGrid
           clips={clips}
@@ -246,13 +266,18 @@ export const ReviewApp: React.FC = () => {
           <PlayerWrapper
             clip={selectedClip}
             sourceVideoPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.video_file ?? '')}
+            sourceAudioPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.audio_file ?? '')}
             energyProfile={sources.get(selectedClip.sourceId)?.energy_profile ?? []}
             onFrameChange={handleFrameChange}
             onNextClip={handleNextClip}
             onPrevClip={handlePrevClip}
           />
         ) : (
-          <div style={{ color: '#555', fontSize: '0.9rem' }}>Select a clip to preview</div>
+          <div style={{ color: '#555', fontSize: '0.9rem' }}>
+            {clips.length === 0 && !loadError
+              ? 'No clips yet. Run ingest and “Generate clips” from the home page, then open /review again.'
+              : 'Select a clip to preview'}
+          </div>
         )}
       </div>
       <div style={{ background: '#0a0a0a', overflowY: 'auto', padding: 8, borderLeft: '1px solid #222' }}>

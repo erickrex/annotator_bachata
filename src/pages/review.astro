@@ -4,5 +4,16 @@ import { ReviewApp } from '../components/ReviewApp';
 ---
 
 <Layout title="Bachata Clip Slicer — Review">
-  <ReviewApp client:load />
+  <div class="review-page-root">
+    <ReviewApp client:load />
+  </div>
 </Layout>
+
+<style>
+  .review-page-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+</style>

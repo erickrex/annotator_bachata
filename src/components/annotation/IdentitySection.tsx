@@ -15,14 +15,14 @@ export function IdentitySection({ annotation, enumDefinitions, onFieldChange, va
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && tagInput.trim()) {
       e.preventDefault();
-      const newTags = [...annotation.tags, tagInput.trim()];
+      const newTags = [...(annotation.tags ?? []), tagInput.trim()];
       onFieldChange('tags', newTags);
       setTagInput('');
     }
   };
 
   const removeTag = (index: number) => {
-    const newTags = annotation.tags.filter((_, i) => i !== index);
+    const newTags = (annotation.tags ?? []).filter((_, i) => i !== index);
     onFieldChange('tags', newTags);
   };
 
@@ -77,7 +77,7 @@ export function IdentitySection({ annotation, enumDefinitions, onFieldChange, va
 
       <FieldWrapper label="Tags" fieldPath="tags" validationErrors={validationErrors}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '4px' }}>
-          {annotation.tags.map((tag, i) => (
+          {(annotation.tags ?? []).map((tag, i) => (
             <span
               key={i}
               style={{

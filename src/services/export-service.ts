@@ -36,6 +36,13 @@ export async function exportClip(
 
   const outputPath = join(outputDir, `${clip.clipId}.mp4`);
 
+  const state = getAppState();
+  const source = state.annotationService.getSource(clip.sourceId);
+  const sourceAudioPath =
+    source?.audio_file != null && source.audio_file.length > 0
+      ? join(state.projectDir, source.audio_file)
+      : undefined;
+
   // Dynamic import to avoid hard dependency at module load time
   const { renderMedia } = await import('@remotion/renderer');
   const bundleLocation = await getBundleLocation();
@@ -49,6 +56,7 @@ export async function exportClip(
       durationInFrames: clip.remotion.durationInFrames,
       defaultProps: {
         src: sourceVideoPath,
+        audioSrc: sourceAudioPath,
         startFrame: clip.remotion.fromFrame,
         durationInFrames: clip.remotion.durationInFrames,
         beatMarkers: clip.beatMarkerFrames,

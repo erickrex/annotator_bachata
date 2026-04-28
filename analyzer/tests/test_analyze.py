@@ -185,3 +185,19 @@ class TestCLI:
         # Default fps is 30
         for ts, frame in zip(data["beat_timestamps"], data["beat_frames"]):
             assert frame == round(ts * 30)
+
+    def test_cli_accepts_fractional_fps_ntsc(self, tmp_path):
+        """29.97 etc. must parse (ffprobe often reports fractional fps)."""
+        wav = make_click_track_wav(tmp_path / "clicks.wav", duration=5.0, bpm=130)
+        fps = 30000 / 1001  # ~29.97
+        result = subprocess.run(
+            [
+                "uv", "run", "python", "-m", "analyzer.analyze",
+                str(wav), "--fps", str(fps),
+            ],
+            capture_output=True, text=True, timeout=60,
+        )
+        assert result.returncode == 0, result.stderr
+        data = json.loads(result.stdout)
+        for ts, frame in zip(data["beat_timestamps"], data["beat_frames"]):
+            assert frame == round(ts * fps)

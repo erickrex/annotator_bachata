@@ -22,7 +22,7 @@ The app downloads a source video, extracts audio, runs a Python `librosa` analyz
 - Rendering/export: Remotion
 - Python analysis: Python 3.11+, `librosa`, `numpy`
 - Tests: Vitest, `fast-check`, pytest
-- External binaries: `yt-dlp`, `ffprobe`, `ffmpeg`, `uv`
+- External binaries: `uv`, `ffprobe`, `ffmpeg` (YouTube downloads use `uv run yt-dlp` from `pyproject.toml`)
 
 ## Architecture Overview
 
@@ -34,7 +34,7 @@ The project has two runtime pieces:
 High-level flow:
 
 1. Open `/` and submit a YouTube URL.
-2. `POST /api/ingest` downloads the video via `yt-dlp`, extracts WAV audio, and reads metadata with `ffprobe`.
+2. `POST /api/ingest` downloads the video via `uv run yt-dlp`, extracts WAV audio, and reads metadata with `ffprobe`.
 3. `POST /api/analyze/:sourceId` runs `uv run python -m analyzer.analyze`.
 4. `POST /api/clips/generate` creates virtual clips from detected cycle boundaries.
 5. Open `/review` to preview clips, annotate them, and manage export.
@@ -112,15 +112,12 @@ Install the following before running the app:
 
 - Node.js LTS with `npm`
 - Python 3.11 or newer
-- `uv`
-- `yt-dlp`
+- `uv` (runs the Python analyzer and `yt-dlp` from this repo’s `pyproject.toml`)
 - `ffmpeg` and `ffprobe`
 
-On macOS with Homebrew, a typical setup looks like:
+Install **`uv`** using the [official uv installation instructions](https://docs.astral.sh/uv/getting-started/installation/). Install **`ffmpeg`** (which includes **`ffprobe`**) using a method your environment allows—see [ffmpeg.org](https://ffmpeg.org/download.html).
 
-```bash
-brew install uv yt-dlp ffmpeg
-```
+After cloning, run **`uv sync`** so `yt-dlp` and the analyzer dependencies are available to `uv run`.
 
 ## Getting Started
 
@@ -132,19 +129,11 @@ npm install
 
 ### 2. Install Python dependencies
 
-Recommended:
-
 ```bash
 uv sync
 ```
 
-Alternative:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-```
+Python dependencies are defined in **`pyproject.toml`** and locked in **`uv.lock`**; use **`uv`** only (see **`AGENTS.md`**).
 
 ### 3. Start the app
 
@@ -204,11 +193,11 @@ uv run pytest
 
 Integration tests verify that subprocess-based dependencies are wired correctly for:
 
-- `yt-dlp`
+- `uv run yt-dlp` (after `uv sync`)
 - `uv` + Python analyzer
 - Remotion
 
-Run them only when the required binaries are installed:
+Run them only when `uv` and `ffmpeg` are installed and Python deps are synced (`uv sync`):
 
 ```bash
 INTEGRATION=1 npx vitest run src/tests/integration/
@@ -266,7 +255,7 @@ Important entities:
 - `src/pages/index.astro`: ingestion page
 - `src/pages/review.astro`: review page entry
 - `src/components/ReviewApp.tsx`: main review UI
-- `src/services/ingestion-service.ts`: `yt-dlp` and `ffprobe` integration
+- `src/services/ingestion-service.ts`: `uv run yt-dlp` and `ffprobe` integration
 - `src/services/audio-analysis-service.ts`: Node-to-Python bridge
 - `src/services/export-service.ts`: Remotion export logic
 - `src/services/project-service.ts`: `project.json` and `manifest.json` persistence
@@ -282,9 +271,9 @@ Important entities:
 
 ## Troubleshooting
 
-### `yt-dlp` not found
+### YouTube download failed to start (`uv` / `yt-dlp`)
 
-Install `yt-dlp` and make sure it is available on your `PATH`.
+Ingestion runs `uv run yt-dlp` from the repo root so `pyproject.toml` / `uv.lock` resolve. Install `uv` on your `PATH`, run `uv sync` in the project directory, and ensure the dev server’s working directory is the repo (or set `PROJECT_DIR` to it). A separately installed system `yt-dlp` binary is not required.
 
 ### `ffprobe` failed to start
 
