@@ -240,6 +240,16 @@ export interface VirtualClipDef {
   beatMarkerFrames: number[]; // beat frame numbers relative to clip
   cycleNumber: number;
   beatCount: number;
+  /** Path to the extracted clip MP4 (relative to project root). Set after extraction. */
+  extractedFile?: string;
+  /** Seconds of extra footage before the logical clip start. */
+  handleBefore?: number;
+  /** Seconds of extra footage after the logical clip end. */
+  handleAfter?: number;
+  /** In-point offset in seconds from the start of the extracted file (default = handleBefore). */
+  inPoint?: number;
+  /** Out-point offset in seconds from the start of the extracted file. */
+  outPoint?: number;
 }
 
 // ---------------------------------------------------------------------------

@@ -3,8 +3,8 @@ import { Audio, Html5Video } from 'remotion';
 import { BeatOverlay } from './BeatOverlay.js';
 import { EnergyOverlay } from './EnergyOverlay.js';
 
-/** Wider than Remotion's ~0.45s default so HTTP/streamed MP4 + separate WAV don't trigger constant correction seeks. */
-const PREVIEW_ACCEPTABLE_TIME_SHIFT_SECONDS = 2.75;
+/** Tight enough to prevent visible replay jumps, loose enough for smooth streaming playback. */
+const PREVIEW_ACCEPTABLE_TIME_SHIFT_SECONDS = 0.3;
 
 export interface VirtualClipProps {
   src: string;
@@ -37,7 +37,7 @@ export const VirtualClip: React.FC<VirtualClipProps> = ({
         muted={useSeparateAudio}
         acceptableTimeShiftInSeconds={PREVIEW_ACCEPTABLE_TIME_SHIFT_SECONDS}
         onlyWarnForMediaSeekingError
-        pauseWhenBuffering={false}
+        pauseWhenBuffering
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />
       {useSeparateAudio ? (
@@ -45,7 +45,7 @@ export const VirtualClip: React.FC<VirtualClipProps> = ({
           src={audioSrc!.trim()}
           startFrom={startFrame}
           acceptableTimeShiftInSeconds={PREVIEW_ACCEPTABLE_TIME_SHIFT_SECONDS}
-          pauseWhenBuffering={false}
+          pauseWhenBuffering
         />
       ) : null}
       <BeatOverlay beatMarkers={beatMarkers} />

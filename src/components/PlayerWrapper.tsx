@@ -24,6 +24,19 @@ export const PlayerWrapper: React.FC<PlayerWrapperProps> = ({
   onPrevClip,
 }) => {
   const playerRef = useRef<PlayerRef>(null);
+  const prevClipIdRef = useRef<string | null>(null);
+
+  // Seek to frame 0 when the clip changes
+  useEffect(() => {
+    if (prevClipIdRef.current !== null && prevClipIdRef.current !== clip.clipId) {
+      const player = playerRef.current;
+      if (player) {
+        player.pause();
+        player.seekTo(0);
+      }
+    }
+    prevClipIdRef.current = clip.clipId;
+  }, [clip.clipId]);
 
   // Frame change callback
   useEffect(() => {
@@ -93,15 +106,39 @@ export const PlayerWrapper: React.FC<PlayerWrapperProps> = ({
   }, [handleKeyDown]);
 
   const { remotion, beatMarkerFrames } = clip;
+  const hasExtracted = Boolean(clip.extractedFile);
+
+  // For extracted clips: play from frame 0 (the file IS the clip + handles).
+  // No startFrom needed — the file starts 1s before the clip and we just play it all.
+  // For non-extracted clips: fall back to seeking into the full source (legacy behavior).
+  const videoSrc = hasExtracted
+    ? `/api/media/${clip.extractedFile!.split('/').map(encodeURIComponent).join('/')}`
+    : sourceVideoPath;
+
+  // For extracted clips, startFrame = 0 (play from the beginning of the short file).
+  // The extracted file already contains only the relevant segment.
+  const startFrame = hasExtracted ? 0 : remotion.fromFrame;
+
+  // For extracted clips, the total duration is the full extracted file (clip + handles).
+  // This lets the user see the handle footage for trim adjustment.
+  const handleBeforeFrames = hasExtracted ? Math.round((clip.handleBefore ?? 0) * remotion.fps) : 0;
+  const handleAfterFrames = hasExtracted ? Math.round((clip.handleAfter ?? 0) * remotion.fps) : 0;
+  const totalDurationInFrames = hasExtracted
+    ? handleBeforeFrames + remotion.durationInFrames + handleAfterFrames
+    : remotion.durationInFrames;
+
+  // For extracted clips, audio is muxed in — no separate audio needed.
+  const audioSrc = hasExtracted ? undefined : sourceAudioPath;
 
   return (
     <div style={{ width: '100%' }}>
       <Player
+        key={clip.clipId}
         ref={playerRef}
         component={VirtualClip}
         compositionWidth={1920}
         compositionHeight={1080}
-        durationInFrames={remotion.durationInFrames}
+        durationInFrames={totalDurationInFrames}
         fps={remotion.fps}
         controls
         loop
@@ -109,16 +146,16 @@ export const PlayerWrapper: React.FC<PlayerWrapperProps> = ({
         numberOfSharedAudioTags={6}
         style={{ width: '100%', aspectRatio: '16/9', background: '#000' }}
         inputProps={{
-          src: sourceVideoPath,
-          audioSrc: sourceAudioPath && sourceAudioPath.length > 0 ? sourceAudioPath : undefined,
-          startFrame: remotion.fromFrame,
-          durationInFrames: remotion.durationInFrames,
+          src: videoSrc,
+          audioSrc,
+          startFrame,
+          durationInFrames: totalDurationInFrames,
           beatMarkers: beatMarkerFrames,
           energyProfile,
         }}
       />
       <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-        Space: play/pause &middot; ←/→: prev/next clip &middot; ,/.: frame step
+        Space: play/pause &middot; &larr;/&rarr;: prev/next clip &middot; ,/.: frame step
       </div>
     </div>
   );

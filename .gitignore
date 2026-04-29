@@ -36,3 +36,7 @@ pnpm-debug.log*
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Media and generated files
+sources/
+exports/

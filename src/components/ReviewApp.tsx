@@ -13,6 +13,7 @@ import { DEFAULT_ENUM_DEFINITIONS } from '../types/enums.js';
 import { ClipGrid } from './ClipGrid.js';
 import { PlayerWrapper } from './PlayerWrapper.js';
 import { AnnotationForm } from './AnnotationForm.js';
+import { TrimControls } from './TrimControls.js';
 
 function resolveMediaUrl(relativePath: string): string {
   if (!relativePath) {
@@ -36,6 +37,7 @@ export const ReviewApp: React.FC = () => {
   const [completeness, setCompleteness] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadReviewState = useCallback(async (preferredClipId: string | null = null) => {
     try {
@@ -169,10 +171,68 @@ export const ReviewApp: React.FC = () => {
     [loadReviewState],
   );
 
+  const handleDeleteAll = useCallback(async () => {
+    if (!confirm('Delete ALL downloaded videos and clips? This cannot be undone.')) return;
+    setDeleting(true);
+    try {
+      const res = await fetch('/api/project/reset', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Reset failed' }));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      await loadReviewState();
+    } catch (err: any) {
+      setLoadError(err.message || 'Failed to delete');
+    } finally {
+      setDeleting(false);
+    }
+  }, [loadReviewState]);
+
+  const handleInPointChange = useCallback(
+    async (seconds: number) => {
+      if (!selectedClipId) return;
+      try {
+        const res = await fetch(`/api/clips/${selectedClipId}/trim`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inPoint: seconds }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.clip) {
+          setClips((prev) => prev.map((c) => c.clipId === selectedClipId ? data.clip : c));
+        }
+      } catch (error) {
+        console.error('Failed to update in-point', error);
+      }
+    },
+    [selectedClipId],
+  );
+
+  const handleOutPointChange = useCallback(
+    async (seconds: number) => {
+      if (!selectedClipId) return;
+      try {
+        const res = await fetch(`/api/clips/${selectedClipId}/trim`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ outPoint: seconds }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.clip) {
+          setClips((prev) => prev.map((c) => c.clipId === selectedClipId ? data.clip : c));
+        }
+      } catch (error) {
+        console.error('Failed to update out-point', error);
+      }
+    },
+    [selectedClipId],
+  );
+
   const handleFieldChange = useCallback(
     async (fieldPath: string, value: unknown) => {
       if (!selectedClipId) return;
-      // Build a partial annotation update from the dot-path
       const parts = fieldPath.split('.');
       let update: Record<string, unknown> = {};
       let current = update;
@@ -214,85 +274,117 @@ export const ReviewApp: React.FC = () => {
   );
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '280px 1fr 340px',
-        flex: 1,
-        minHeight: 0,
-        width: '100%',
-        height: '100%',
-        gap: '1px',
-        background: '#1a1a1a',
-      }}
-    >
-      {loadError && (
-        <div
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, width: '100%', height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px', background: '#0a0a0a', borderBottom: '1px solid #222' }}>
+        <button
+          onClick={handleDeleteAll}
+          disabled={deleting}
           style={{
-            gridColumn: '1 / -1',
-            padding: 12,
-            background: '#3a1515',
-            color: '#ffb4b4',
-            fontSize: 13,
-            borderBottom: '1px solid #622',
+            padding: '6px 14px',
+            borderRadius: '4px',
+            border: 'none',
+            background: '#dc2626',
+            color: '#fff',
+            fontSize: '0.8rem',
+            cursor: deleting ? 'not-allowed' : 'pointer',
+            opacity: deleting ? 0.5 : 1,
           }}
         >
-          {loadError}
-        </div>
-      )}
-      <div style={{ background: '#0a0a0a', overflowY: 'auto', padding: 8, borderRight: '1px solid #222' }}>
-        <ClipGrid
-          clips={clips}
-          annotations={annotations}
-          completenessMap={completenessMap}
-          selectedClipId={selectedClipId}
-          onSelectClip={handleSelectClip}
-          onDiscardClip={handleDiscardClip}
-          onMergeClips={handleMergeClips}
-          onSplitClip={handleSplitClip}
-          currentFrame={currentFrame}
-        />
+          {deleting ? 'Deleting...' : 'Delete all videos'}
+        </button>
       </div>
       <div
         style={{
-          background: '#0a0a0a',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          display: 'grid',
+          gridTemplateColumns: '280px 1fr 340px',
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          gap: '1px',
+          background: '#1a1a1a',
         }}
       >
-        {selectedClip ? (
-          <PlayerWrapper
-            clip={selectedClip}
-            sourceVideoPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.video_file ?? '')}
-            sourceAudioPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.audio_file ?? '')}
-            energyProfile={sources.get(selectedClip.sourceId)?.energy_profile ?? []}
-            onFrameChange={handleFrameChange}
-            onNextClip={handleNextClip}
-            onPrevClip={handlePrevClip}
-          />
-        ) : (
-          <div style={{ color: '#555', fontSize: '0.9rem' }}>
-            {clips.length === 0 && !loadError
-              ? 'No clips yet. Run ingest and “Generate clips” from the home page, then open /review again.'
-              : 'Select a clip to preview'}
+        {loadError && (
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              padding: 12,
+              background: '#3a1515',
+              color: '#ffb4b4',
+              fontSize: 13,
+              borderBottom: '1px solid #622',
+            }}
+          >
+            {loadError}
           </div>
         )}
-      </div>
-      <div style={{ background: '#0a0a0a', overflowY: 'auto', padding: 8, borderLeft: '1px solid #222' }}>
-        {selectedClip && selectedAnnotation ? (
-          <AnnotationForm
-            clip={selectedClip}
-            annotation={selectedAnnotation}
-            enumDefinitions={DEFAULT_ENUM_DEFINITIONS}
-            onFieldChange={handleFieldChange}
-            validationErrors={validationErrors}
-            completeness={completeness}
+        <div style={{ background: '#0a0a0a', overflowY: 'auto', padding: 8, borderRight: '1px solid #222' }}>
+          <ClipGrid
+            clips={clips}
+            annotations={annotations}
+            completenessMap={completenessMap}
+            selectedClipId={selectedClipId}
+            onSelectClip={handleSelectClip}
+            onDiscardClip={handleDiscardClip}
+            onMergeClips={handleMergeClips}
+            onSplitClip={handleSplitClip}
+            currentFrame={currentFrame}
           />
-        ) : (
-          <div style={{ color: '#555', fontSize: '0.9rem' }}>Select a clip to annotate</div>
-        )}
+        </div>
+        <div
+          style={{
+            background: '#0a0a0a',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '8px',
+          }}
+        >
+          {selectedClip ? (
+            <>
+              <PlayerWrapper
+                clip={selectedClip}
+                sourceVideoPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.video_file ?? '')}
+                sourceAudioPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.audio_file ?? '')}
+                energyProfile={sources.get(selectedClip.sourceId)?.energy_profile ?? []}
+                onFrameChange={handleFrameChange}
+                onNextClip={handleNextClip}
+                onPrevClip={handlePrevClip}
+              />
+              {selectedClip.extractedFile && (
+                <div style={{ width: '100%', marginTop: 8 }}>
+                  <TrimControls
+                    clip={selectedClip}
+                    currentFrame={currentFrame}
+                    onInPointChange={handleInPointChange}
+                    onOutPointChange={handleOutPointChange}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ color: '#555', fontSize: '0.9rem' }}>
+              {clips.length === 0 && !loadError
+                ? 'No clips yet. Run ingest and "Generate clips" from the home page, then open /review again.'
+                : 'Select a clip to preview'}
+            </div>
+          )}
+        </div>
+        <div style={{ background: '#0a0a0a', overflowY: 'auto', padding: 8, borderLeft: '1px solid #222' }}>
+          {selectedClip && selectedAnnotation ? (
+            <AnnotationForm
+              clip={selectedClip}
+              annotation={selectedAnnotation}
+              enumDefinitions={DEFAULT_ENUM_DEFINITIONS}
+              onFieldChange={handleFieldChange}
+              validationErrors={validationErrors}
+              completeness={completeness}
+            />
+          ) : (
+            <div style={{ color: '#555', fontSize: '0.9rem' }}>Select a clip to annotate</div>
+          )}
+        </div>
       </div>
     </div>
   );
