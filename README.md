@@ -221,11 +221,6 @@ INTEGRATION=1 npx vitest run src/tests/integration/
 - `POST /api/clips/:id/split`: split a clip
 - `POST /api/clips/merge`: merge two clips
 
-### Beat-grid operations
-
-- `PUT /api/beatgrid/shift`
-- `PUT /api/beatgrid/downbeat`
-
 ### Project operations
 
 - `GET /api/project`: current manifest

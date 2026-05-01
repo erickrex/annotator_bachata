@@ -19,26 +19,6 @@ function makeClipId(sourceId: string, cycleNumber: number, beatCount: number): s
   return `${sourceId}_c${pad3(cycleNumber)}_${pad3(beatCount)}`;
 }
 
-
-
-/** Find the nearest frame in a sorted array. */
-function snapToNearest(frame: number, grid: number[]): number {
-  if (grid.length === 0) return frame;
-
-  let lo = 0;
-  let hi = grid.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (grid[mid] < frame) lo = mid + 1;
-    else hi = mid;
-  }
-  // lo is the first element >= frame
-  if (lo === 0) return grid[0];
-  const prev = grid[lo - 1];
-  const curr = grid[lo];
-  return Math.abs(frame - prev) <= Math.abs(frame - curr) ? prev : curr;
-}
-
 // ---------------------------------------------------------------------------
 // createClips
 // ---------------------------------------------------------------------------
@@ -246,44 +226,4 @@ export function splitClip(
   return [clipADef, clipBDef];
 }
 
-// ---------------------------------------------------------------------------
-// adjustBoundary
-// ---------------------------------------------------------------------------
 
-/**
- * Adjust a clip's start and/or end frame, snapping to the nearest beat-aligned
- * position from the beat grid. Pass null to leave a boundary unchanged.
- */
-export function adjustBoundary(
-  clip: VirtualClipDef,
-  newFromFrame: number | null,
-  newEndFrame: number | null,
-  beatGridFrames: number[],
-): VirtualClipDef {
-  const currentFrom = clip.remotion.fromFrame;
-  const currentEnd = currentFrom + clip.remotion.durationInFrames - 1;
-
-  const adjustedFrom = newFromFrame !== null
-    ? snapToNearest(newFromFrame, beatGridFrames)
-    : currentFrom;
-
-  const adjustedEnd = newEndFrame !== null
-    ? snapToNearest(newEndFrame, beatGridFrames)
-    : currentEnd;
-
-  const durationInFrames = adjustedEnd - adjustedFrom + 1;
-
-  const beatMarkerFrames = beatGridFrames
-    .filter((frame) => frame >= adjustedFrom && frame <= adjustedEnd)
-    .map((frame) => frame - adjustedFrom);
-
-  return {
-    ...clip,
-    remotion: {
-      ...clip.remotion,
-      fromFrame: adjustedFrom,
-      durationInFrames,
-    },
-    beatMarkerFrames,
-  };
-}

@@ -69,12 +69,6 @@ function makeClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation {
       beat_start: 1,
       beat_end: 8,
     },
-    completion_profile: {
-      basico_completion_counts: 1,
-      tempo_feel: 'even_finish',
-      accent_pattern: 'even',
-      syncopation_level: 0.2,
-    },
     entry_state: {
       hold: 'closed',
       leader_weight_foot: 'left',
@@ -92,7 +86,6 @@ function makeClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation {
     motion_profile: {},
     camera_profile: {},
     quality_profile: {},
-    embedding_refs: {},
     ...overrides,
   };
 }

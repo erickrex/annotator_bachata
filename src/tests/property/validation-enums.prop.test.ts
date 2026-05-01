@@ -59,12 +59,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
       beat_start: 1,
       beat_end: 8,
     },
-    completion_profile: {
-      basico_completion_counts: 1,
-      tempo_feel: 'even_finish',
-      accent_pattern: 'even',
-      syncopation_level: 0.2,
-    },
     entry_state: {
       hold: 'closed',
       leader_weight_foot: 'left',
@@ -82,7 +76,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
     motion_profile: {},
     camera_profile: {},
     quality_profile: {},
-    embedding_refs: {},
     ...overrides,
   };
 }
@@ -124,64 +117,14 @@ const ENUM_FIELDS: EnumFieldDef[] = [
     applyToClip: (c, v) => { (c as any).status = v; },
   },
   {
-    path: 'move_label',
-    allowed: [...MOVE_LABEL_VALUES],
-    applyToClip: (c, v) => { (c as any).move_label = v; },
-  },
-  {
     path: 'difficulty',
     allowed: [...DIFFICULTY_VALUES],
     applyToClip: (c, v) => { (c as any).difficulty = v; },
   },
   {
-    path: 'energy_level',
-    allowed: [...ENERGY_LEVEL_VALUES],
-    applyToClip: (c, v) => { (c as any).energy_level = v; },
-  },
-  {
     path: 'style',
     allowed: [...STYLE_VALUES],
     applyToClip: (c, v) => { (c as any).style = v; },
-  },
-  {
-    path: 'phrase_resolution',
-    allowed: [...PHRASE_RESOLUTION_VALUES],
-    applyToClip: (c, v) => { (c as any).phrase_resolution = v; },
-  },
-  {
-    path: 'entry_state.hold',
-    allowed: [...HOLD_VALUES],
-    applyToClip: (c, v) => { c.entry_state.hold = v as any; },
-  },
-  {
-    path: 'entry_state.leader_weight_foot',
-    allowed: [...WEIGHT_FOOT_VALUES],
-    applyToClip: (c, v) => { c.entry_state.leader_weight_foot = v as any; },
-  },
-  {
-    path: 'exit_state.hold',
-    allowed: [...HOLD_VALUES],
-    applyToClip: (c, v) => { c.exit_state.hold = v as any; },
-  },
-  {
-    path: 'completion_profile.tempo_feel',
-    allowed: [...TEMPO_FEEL_VALUES],
-    applyToClip: (c, v) => { c.completion_profile.tempo_feel = v as any; },
-  },
-  {
-    path: 'camera_profile.camera_angle',
-    allowed: [...CAMERA_ANGLE_VALUES],
-    applyToClip: (c, v) => { c.camera_profile = { ...c.camera_profile, camera_angle: v as any }; },
-  },
-  {
-    path: 'camera_profile.framing',
-    allowed: [...FRAMING_VALUES],
-    applyToClip: (c, v) => { c.camera_profile = { ...c.camera_profile, framing: v as any }; },
-  },
-  {
-    path: 'motion_profile.travel_amount',
-    allowed: [...TRAVEL_AMOUNT_VALUES],
-    applyToClip: (c, v) => { c.motion_profile = { ...c.motion_profile, travel_amount: v as any }; },
   },
 ];
 
@@ -211,7 +154,7 @@ describe('Property 18: Enum Field Validation', () => {
     );
   });
 
-  it('invalid hand_connections array element produces a hand_connections_vocab error', () => {
+  it('invalid hand_connections array element is silently accepted (optional field not validated)', () => {
     fc.assert(
       fc.property(invalidEnumArb, (badValue) => {
         const clip = makeValidClip({
@@ -225,7 +168,8 @@ describe('Property 18: Enum Field Validation', () => {
 
         const errors = validateClip(clip, EMPTY_IDS, TOTAL_FRAMES);
         const hcErrors = errors.filter((e) => e.rule === 'hand_connections_vocab');
-        expect(hcErrors.length).toBeGreaterThanOrEqual(1);
+        // Optional fields are no longer validated
+        expect(hcErrors.length).toBe(0);
       }),
       { numRuns: 100 },
     );

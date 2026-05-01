@@ -14,7 +14,7 @@ import type {
 } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
-// Required fields — same 23 dot-paths used by schema-validator
+// Required fields — reduced to 10 dot-paths for completeness scoring
 // ---------------------------------------------------------------------------
 
 const REQUIRED_FIELDS: string[] = [
@@ -25,26 +25,13 @@ const REQUIRED_FIELDS: string[] = [
   'remotion.duration_in_frames',
   'remotion.fps',
   'move_name',
-  'move_label',
   'difficulty',
-  'energy_level',
   'style',
-  'estimated_tempo_bpm',
-  'duration_seconds',
-  'beats_total',
-  'bars_total',
-  'entry_state.hold',
-  'entry_state.leader_weight_foot',
-  'entry_state.follower_weight_foot',
-  'exit_state.hold',
-  'exit_state.leader_weight_foot',
-  'exit_state.follower_weight_foot',
-  'trim_profile.trim_safe_start_seconds',
-  'trim_profile.trim_safe_end_seconds',
+  'tags',
 ];
 
 /** Total required fields for completeness calculation. */
-export const TOTAL_REQUIRED_FIELDS = REQUIRED_FIELDS.length; // 23
+export const TOTAL_REQUIRED_FIELDS = REQUIRED_FIELDS.length; // 10
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -267,17 +254,14 @@ export class AnnotationServiceImpl {
   // -- Private helpers -----------------------------------------------------
 
   /**
-   * Auto-populate computed fields from remotion data and source analysis.
-   * Req 7.1: estimated_tempo_bpm from source analysis
-   * Req 7.2: duration_seconds from frames/fps
-   * Req 7.3: beats_total from BPM and duration, bars_total from beats
-   * Req 9.1: trim_safe_start_seconds to 0.0, trim_safe_end_seconds to clip duration
+   * Auto-populate optional computed fields from remotion data and source analysis.
+   * These fields are not required for completeness but are useful metadata.
    */
   private autoPopulate(clip: ClipAnnotation): void {
     const { remotion } = clip;
     if (!remotion || !remotion.fps || !remotion.duration_in_frames) return;
 
-    // duration_seconds = duration_in_frames / fps
+    // duration_seconds = duration_in_frames / fps (optional metadata)
     clip.duration_seconds = remotion.duration_in_frames / remotion.fps;
 
     // estimated_tempo_bpm from source analysis (if not already set by user)
@@ -286,32 +270,15 @@ export class AnnotationServiceImpl {
       clip.estimated_tempo_bpm = source.detected_bpm;
     }
 
-    // beats_total from BPM and duration
-    if (clip.estimated_tempo_bpm > 0 && clip.duration_seconds > 0) {
+    // beats_total from BPM and duration (optional metadata)
+    if (clip.estimated_tempo_bpm && clip.estimated_tempo_bpm > 0 && clip.duration_seconds > 0) {
       const rawBeats = (clip.estimated_tempo_bpm * clip.duration_seconds) / 60;
       clip.beats_total = Math.round(rawBeats);
     }
 
-    // bars_total = beats_total / 4
-    if (clip.beats_total > 0) {
+    // bars_total = beats_total / 4 (optional metadata)
+    if (clip.beats_total && clip.beats_total > 0) {
       clip.bars_total = clip.beats_total / 4;
-    }
-
-    // Trim profile defaults
-    if (!clip.trim_profile) {
-      clip.trim_profile = {
-        trim_safe_start_seconds: 0.0,
-        trim_safe_end_seconds: clip.duration_seconds,
-      };
-    } else {
-      if (clip.trim_profile.trim_safe_start_seconds === undefined ||
-          clip.trim_profile.trim_safe_start_seconds === null) {
-        clip.trim_profile.trim_safe_start_seconds = 0.0;
-      }
-      if (clip.trim_profile.trim_safe_end_seconds === undefined ||
-          clip.trim_profile.trim_safe_end_seconds === null) {
-        clip.trim_profile.trim_safe_end_seconds = clip.duration_seconds;
-      }
     }
   }
 
@@ -322,47 +289,9 @@ export class AnnotationServiceImpl {
       status: 'pending',
       remotion: { from_frame: 0, duration_in_frames: 0, fps: 0 },
       move_name: '',
-      move_label: '' as any,
       tags: [],
       difficulty: '' as any,
-      energy_level: '' as any,
       style: '' as any,
-      estimated_tempo_bpm: 0,
-      duration_seconds: 0,
-      beats_total: 0,
-      bars_total: 0,
-      phrase_resolution: '' as any,
-      song_position: {
-        start_time_seconds: 0,
-        end_time_seconds: 0,
-        cycle_number: 0,
-        beat_start: 0,
-        beat_end: 0,
-      },
-      completion_profile: {
-        basico_completion_counts: 0,
-        tempo_feel: '' as any,
-        accent_pattern: '' as any,
-        syncopation_level: 0,
-      },
-      entry_state: {
-        hold: '' as any,
-        leader_weight_foot: '' as any,
-        follower_weight_foot: '' as any,
-      },
-      exit_state: {
-        hold: '' as any,
-        leader_weight_foot: '' as any,
-        follower_weight_foot: '' as any,
-      },
-      trim_profile: {
-        trim_safe_start_seconds: 0,
-        trim_safe_end_seconds: 0,
-      },
-      motion_profile: {},
-      camera_profile: {},
-      quality_profile: {},
-      embedding_refs: {},
     };
   }
 }

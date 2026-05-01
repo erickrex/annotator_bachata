@@ -113,56 +113,35 @@ export interface ClipAnnotation {
     fps: number;
   };
 
-  // Identity & Classification
+  // Required for completeness
   move_name: string;
-  move_label: MoveLabel;
+  difficulty: Difficulty;
+  style: Style;
+  tags: string[];
+
+  // Optional metadata (does not affect completeness)
+  move_label?: MoveLabel;
   move_family?: string;
   move_variant?: string;
-  tags: string[];
-  difficulty: Difficulty;
-  energy_level: EnergyLevel;
-  style: Style;
-
-  // Musical Phrasing
-  estimated_tempo_bpm: number;
-  duration_seconds: number;
-  beats_total: number;
-  bars_total: number;
-  phrase_resolution: PhraseResolution;
-  song_position: {
+  energy_level?: EnergyLevel;
+  estimated_tempo_bpm?: number;
+  duration_seconds?: number;
+  beats_total?: number;
+  bars_total?: number;
+  phrase_resolution?: PhraseResolution;
+  song_position?: {
     start_time_seconds: number;
     end_time_seconds: number;
     cycle_number: number;
     beat_start: number;
     beat_end: number;
   };
-  completion_profile: {
-    basico_completion_counts: number;
-    entry_latency_counts?: number;
-    exit_latency_counts?: number;
-    tempo_feel: TempoFeel;
-    accent_pattern: AccentPattern;
-    syncopation_level: number; // 0.0–1.0
-  };
-
-  // Entry & Exit State
-  entry_state: DancerState;
-  exit_state: DancerState;
-
-  // Trim Profile
-  trim_profile: TrimProfile;
-
-  // Motion Profile
-  motion_profile: MotionProfile;
-
-  // Camera Profile
-  camera_profile: CameraProfile;
-
-  // Quality Profile
-  quality_profile: QualityProfile;
-
-  // Future use
-  embedding_refs: Record<string, unknown>;
+  entry_state?: DancerState;
+  exit_state?: DancerState;
+  trim_profile?: TrimProfile;
+  motion_profile?: MotionProfile;
+  camera_profile?: CameraProfile;
+  quality_profile?: QualityProfile;
 }
 
 // ---------------------------------------------------------------------------

@@ -65,19 +65,12 @@ function clipArb(clipIndex: number, sourceId: string, status: ClipStatus): ClipA
       beat_start: 1,
       beat_end: 8,
     },
-    completion_profile: {
-      basico_completion_counts: 1,
-      tempo_feel: 'even_finish',
-      accent_pattern: 'even',
-      syncopation_level: 0.2,
-    },
     entry_state: { hold: 'closed', leader_weight_foot: 'left', follower_weight_foot: 'right' },
     exit_state: { hold: 'closed', leader_weight_foot: 'right', follower_weight_foot: 'left' },
     trim_profile: { trim_safe_start_seconds: 0, trim_safe_end_seconds: 8 },
     motion_profile: {},
     camera_profile: {},
     quality_profile: {},
-    embedding_refs: {},
   };
 }
 

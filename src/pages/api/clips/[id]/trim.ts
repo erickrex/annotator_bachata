@@ -8,6 +8,7 @@ import {
   jsonResponse,
   errorResponse,
 } from '../../../../services/app-state.js';
+import { recomputeBeatMarkers } from '../../../../services/beat-marker-utils.js';
 
 export const PUT: APIRoute = async ({ params, request }) => {
   const { id } = params;
@@ -56,6 +57,14 @@ export const PUT: APIRoute = async ({ params, request }) => {
   const outPt = clip.outPoint ?? (handleBefore + clipDuration);
   if (inPt >= outPt) {
     return errorResponse('inPoint must be less than outPoint');
+  }
+
+  // Recompute beat markers for the new trim range
+  const source = state.annotationService.getSource(clip.sourceId);
+  if (source && source.beat_grid_frames && source.beat_grid_frames.length > 0) {
+    clip.beatMarkerFrames = recomputeBeatMarkers(clip, source.beat_grid_frames);
+  } else {
+    clip.beatMarkerFrames = [];
   }
 
   autoSave();

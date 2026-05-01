@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { AnnotationServiceImpl } from './annotation-service.js';
 import { computeManifest, createDebouncedSaver } from './project-service.js';
 import type { DebouncedSaver, ExtendedProjectFile } from './project-service.js';
+import { registerShutdownHandlers } from './shutdown-handler.js';
 import type {
   ClipAnnotation,
   AudioAnalysisResult,
@@ -129,6 +130,8 @@ export function getAppState(): AppState {
       projectDir,
       debouncedSaver: createDebouncedSaver(projectDir),
     };
+
+    registerShutdownHandlers(instance.debouncedSaver);
   }
   return instance;
 }
@@ -136,8 +139,21 @@ export function getAppState(): AppState {
 export function getFullProjectState(): ExtendedProjectFile {
   const state = getAppState();
   const projectFile = state.annotationService.exportProject();
+
+  // Derive ClipAnnotation.remotion from VirtualClipDef at serialization time
+  // (VirtualClipDef is the single source of truth for timing fields)
+  const clips = projectFile.clips.map((annotation) => {
+    const clipDef = state.clips.get(annotation.clip_id);
+    if (clipDef) {
+      const derived = clipToAnnotationFields(clipDef);
+      return { ...annotation, remotion: derived.remotion! };
+    }
+    return annotation;
+  });
+
   return {
     ...projectFile,
+    clips,
     virtual_clips: Array.from(state.clips.values()),
     cycle_hierarchies: Array.from(state.cycles.entries()),
     analysis_results: Array.from(state.analysisResults.entries()),

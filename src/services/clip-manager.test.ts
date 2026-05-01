@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createClips, mergeClips, splitClip, adjustBoundary } from './clip-manager.js';
+import { createClips, mergeClips, splitClip } from './clip-manager.js';
 import type { CycleHierarchy, Cycle, VirtualClipDef } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
@@ -245,64 +245,4 @@ describe('splitClip', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// adjustBoundary
-// ---------------------------------------------------------------------------
 
-describe('adjustBoundary', () => {
-  const beatGrid = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-
-  const clip: VirtualClipDef = {
-    clipId: 'src1_c001_008',
-    sourceId: 'src1',
-    status: 'pending',
-    remotion: { fromFrame: 0, durationInFrames: 71, fps: 30 },
-    beatMarkerFrames: [0, 10, 20, 30, 40, 50, 60, 70],
-    cycleNumber: 1,
-    beatCount: 8,
-  };
-
-  it('snaps newFromFrame to nearest beat', () => {
-    const adjusted = adjustBoundary(clip, 12, null, beatGrid);
-    expect(adjusted.remotion.fromFrame).toBe(10);
-  });
-
-  it('snaps newEndFrame to nearest beat', () => {
-    const adjusted = adjustBoundary(clip, null, 63, beatGrid);
-    expect(adjusted.remotion.fromFrame).toBe(0);
-    // Snaps 63 → 60, duration = 60 - 0 + 1 = 61
-    expect(adjusted.remotion.durationInFrames).toBe(61);
-  });
-
-  it('adjusts both boundaries simultaneously', () => {
-    const adjusted = adjustBoundary(clip, 8, 92, beatGrid);
-    expect(adjusted.remotion.fromFrame).toBe(10);
-    // 92 snaps to 90, duration = 90 - 10 + 1 = 81
-    expect(adjusted.remotion.durationInFrames).toBe(81);
-  });
-
-  it('leaves boundary unchanged when null is passed', () => {
-    const adjusted = adjustBoundary(clip, null, null, beatGrid);
-    expect(adjusted.remotion.fromFrame).toBe(clip.remotion.fromFrame);
-    expect(adjusted.remotion.durationInFrames).toBe(clip.remotion.durationInFrames);
-  });
-
-  it('filters beat markers to the new range', () => {
-    const adjusted = adjustBoundary(clip, 20, 50, beatGrid);
-    expect(adjusted.beatMarkerFrames).toEqual([0, 10, 20, 30]);
-  });
-
-  it('re-bases beat markers when adjusting a non-zero clip', () => {
-    const nonZeroClip: VirtualClipDef = {
-      ...clip,
-      clipId: 'src1_c003_008',
-      remotion: { fromFrame: 160, durationInFrames: 71, fps: 30 },
-      beatMarkerFrames: [0, 10, 20, 30, 40, 50, 60, 70],
-      cycleNumber: 3,
-    };
-
-    const adjusted = adjustBoundary(nonZeroClip, 180, 210, [160, 170, 180, 190, 200, 210, 220, 230]);
-    expect(adjusted.remotion.fromFrame).toBe(180);
-    expect(adjusted.beatMarkerFrames).toEqual([0, 10, 20, 30]);
-  });
-});

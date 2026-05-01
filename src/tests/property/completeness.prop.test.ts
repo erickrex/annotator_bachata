@@ -18,22 +18,9 @@ const REQUIRED_FIELDS = [
   'remotion.duration_in_frames',
   'remotion.fps',
   'move_name',
-  'move_label',
   'difficulty',
-  'energy_level',
   'style',
-  'estimated_tempo_bpm',
-  'duration_seconds',
-  'beats_total',
-  'bars_total',
-  'entry_state.hold',
-  'entry_state.leader_weight_foot',
-  'entry_state.follower_weight_foot',
-  'exit_state.hold',
-  'exit_state.leader_weight_foot',
-  'exit_state.follower_weight_foot',
-  'trim_profile.trim_safe_start_seconds',
-  'trim_profile.trim_safe_end_seconds',
+  'tags',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -64,12 +51,6 @@ function makeValidClip(): ClipAnnotation {
       beat_start: 1,
       beat_end: 8,
     },
-    completion_profile: {
-      basico_completion_counts: 1,
-      tempo_feel: 'even_finish',
-      accent_pattern: 'even',
-      syncopation_level: 0.2,
-    },
     entry_state: {
       hold: 'closed',
       leader_weight_foot: 'left',
@@ -87,7 +68,6 @@ function makeValidClip(): ClipAnnotation {
     motion_profile: {},
     camera_profile: {},
     quality_profile: {},
-    embedding_refs: {},
   };
 }
 

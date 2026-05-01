@@ -14,19 +14,15 @@
     "@astrojs/check": "^0.9.8",
     "@astrojs/node": "^9.5.5",
     "@astrojs/react": "^4.2.0",
-    "@remotion/cli": "^4.0.296",
-    "@remotion/media-utils": "^4.0.296",
-    "@remotion/player": "^4.0.296",
-    "@remotion/renderer": "^4.0.296",
     "astro": "^5.8.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "remotion": "^4.0.296"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "fast-check": "^4.1.1",
+    "jsdom": "^29.1.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.1"
   }

@@ -11,21 +11,9 @@ import type {
 } from '../types/index.js';
 import { DEFAULT_ENUM_DEFINITIONS } from '../types/enums.js';
 import { ClipGrid } from './ClipGrid.js';
-import { PlayerWrapper } from './PlayerWrapper.js';
+import { ClipPreviewPlayer } from './ClipPreviewPlayer.js';
 import { AnnotationForm } from './AnnotationForm.js';
 import { TrimControls } from './TrimControls.js';
-
-function resolveMediaUrl(relativePath: string): string {
-  if (!relativePath) {
-    return '';
-  }
-
-  const encodedPath = relativePath
-    .split('/')
-    .map((segment) => encodeURIComponent(segment))
-    .join('/');
-  return `/api/media/${encodedPath}`;
-}
 
 export const ReviewApp: React.FC = () => {
   const [clips, setClips] = useState<VirtualClipDef[]>([]);
@@ -343,10 +331,9 @@ export const ReviewApp: React.FC = () => {
         >
           {selectedClip ? (
             <>
-              <PlayerWrapper
+              <ClipPreviewPlayer
                 clip={selectedClip}
-                sourceVideoPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.video_file ?? '')}
-                sourceAudioPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.audio_file ?? '')}
+                beatMarkerFrames={selectedClip.beatMarkerFrames}
                 energyProfile={sources.get(selectedClip.sourceId)?.energy_profile ?? []}
                 onFrameChange={handleFrameChange}
                 onNextClip={handleNextClip}

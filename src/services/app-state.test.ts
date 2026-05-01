@@ -89,12 +89,6 @@ describe('getAppState restore from project.json', () => {
             beat_start: 1,
             beat_end: 8,
           },
-          completion_profile: {
-            basico_completion_counts: 0,
-            tempo_feel: '' as any,
-            accent_pattern: '' as any,
-            syncopation_level: 0,
-          },
           entry_state: {
             hold: '' as any,
             leader_weight_foot: '' as any,
@@ -109,7 +103,6 @@ describe('getAppState restore from project.json', () => {
           motion_profile: {},
           camera_profile: {},
           quality_profile: {},
-          embedding_refs: {},
         },
       ],
       virtual_clips: [clip],
@@ -319,12 +312,6 @@ describe('getAppState restore from project.json', () => {
               beat_start: 1,
               beat_end: 8,
             },
-            completion_profile: {
-              basico_completion_counts: 0,
-              tempo_feel: '' as any,
-              accent_pattern: '' as any,
-              syncopation_level: 0,
-            },
             entry_state: {
               hold: '' as any,
               leader_weight_foot: '' as any,
@@ -339,7 +326,6 @@ describe('getAppState restore from project.json', () => {
             motion_profile: {},
             camera_profile: {},
             quality_profile: {},
-            embedding_refs: {},
           },
         ],
       };
@@ -355,5 +341,161 @@ describe('getAppState restore from project.json', () => {
     } finally {
       process.cwd = originalCwd;
     }
+  });
+});
+
+describe('Data model deduplication: VirtualClipDef as single source of truth', () => {
+  beforeEach(async () => {
+    const mod = await import('./app-state.js');
+    mod.resetAppState();
+  });
+
+  afterEach(async () => {
+    const mod = await import('./app-state.js');
+    mod.resetAppState();
+  });
+
+  it('ClipAnnotation.remotion is derived from VirtualClipDef timing on serialization', async () => {
+    const mod = await import('./app-state.js');
+
+    const clip: VirtualClipDef = {
+      clipId: 'test_c001_008',
+      sourceId: 'src1',
+      status: 'pending',
+      remotion: { fromFrame: 100, durationInFrames: 300, fps: 30 },
+      beatMarkerFrames: [0, 30, 60],
+      cycleNumber: 1,
+      beatCount: 8,
+    };
+
+    mod.upsertClip(clip);
+
+    const projectState = mod.getFullProjectState();
+    const annotation = projectState.clips.find((c) => c.clip_id === 'test_c001_008');
+
+    expect(annotation).toBeDefined();
+    expect(annotation!.remotion).toEqual({
+      from_frame: 100,
+      duration_in_frames: 300,
+      fps: 30,
+    });
+  });
+
+  it('updating VirtualClipDef timing propagates to ClipAnnotation on next serialization', async () => {
+    const mod = await import('./app-state.js');
+
+    const clip: VirtualClipDef = {
+      clipId: 'test_c002_008',
+      sourceId: 'src1',
+      status: 'pending',
+      remotion: { fromFrame: 50, durationInFrames: 200, fps: 24 },
+      beatMarkerFrames: [],
+      cycleNumber: 2,
+      beatCount: 8,
+    };
+
+    // Insert clip with initial timing
+    mod.upsertClip(clip);
+
+    // Verify initial serialization
+    let projectState = mod.getFullProjectState();
+    let annotation = projectState.clips.find((c) => c.clip_id === 'test_c002_008');
+    expect(annotation!.remotion).toEqual({
+      from_frame: 50,
+      duration_in_frames: 200,
+      fps: 24,
+    });
+
+    // Update the VirtualClipDef timing directly (simulating a trim or re-slice)
+    const state = mod.getAppState();
+    const storedClip = state.clips.get('test_c002_008')!;
+    storedClip.remotion.fromFrame = 120;
+    storedClip.remotion.durationInFrames = 480;
+    storedClip.remotion.fps = 30;
+
+    // Re-serialize — annotation should reflect the updated timing without manual sync
+    projectState = mod.getFullProjectState();
+    annotation = projectState.clips.find((c) => c.clip_id === 'test_c002_008');
+
+    expect(annotation!.remotion).toEqual({
+      from_frame: 120,
+      duration_in_frames: 480,
+      fps: 30,
+    });
+  });
+
+  it('no manual sync is needed: annotation remotion always reflects current VirtualClipDef', async () => {
+    const mod = await import('./app-state.js');
+
+    const clip: VirtualClipDef = {
+      clipId: 'test_c003_008',
+      sourceId: 'src1',
+      status: 'pending',
+      remotion: { fromFrame: 0, durationInFrames: 240, fps: 30 },
+      beatMarkerFrames: [0, 30],
+      cycleNumber: 3,
+      beatCount: 8,
+    };
+
+    mod.upsertClip(clip);
+
+    // Perform multiple timing updates without calling any sync function
+    const state = mod.getAppState();
+    const storedClip = state.clips.get('test_c003_008')!;
+
+    // First update
+    storedClip.remotion.fromFrame = 10;
+    storedClip.remotion.durationInFrames = 100;
+
+    let projectState = mod.getFullProjectState();
+    let annotation = projectState.clips.find((c) => c.clip_id === 'test_c003_008');
+    expect(annotation!.remotion.from_frame).toBe(10);
+    expect(annotation!.remotion.duration_in_frames).toBe(100);
+
+    // Second update — still no manual sync call
+    storedClip.remotion.fromFrame = 500;
+    storedClip.remotion.durationInFrames = 60;
+    storedClip.remotion.fps = 60;
+
+    projectState = mod.getFullProjectState();
+    annotation = projectState.clips.find((c) => c.clip_id === 'test_c003_008');
+    expect(annotation!.remotion).toEqual({
+      from_frame: 500,
+      duration_in_frames: 60,
+      fps: 60,
+    });
+  });
+
+  it('upsertClip with new timing replaces annotation remotion on serialization', async () => {
+    const mod = await import('./app-state.js');
+
+    const clip: VirtualClipDef = {
+      clipId: 'test_c004_008',
+      sourceId: 'src1',
+      status: 'pending',
+      remotion: { fromFrame: 0, durationInFrames: 240, fps: 30 },
+      beatMarkerFrames: [],
+      cycleNumber: 4,
+      beatCount: 8,
+    };
+
+    mod.upsertClip(clip);
+
+    // Now upsert the same clip with different timing (simulating re-generation)
+    const updatedClip: VirtualClipDef = {
+      ...clip,
+      remotion: { fromFrame: 300, durationInFrames: 480, fps: 60 },
+    };
+
+    mod.upsertClip(updatedClip);
+
+    const projectState = mod.getFullProjectState();
+    const annotation = projectState.clips.find((c) => c.clip_id === 'test_c004_008');
+
+    expect(annotation!.remotion).toEqual({
+      from_frame: 300,
+      duration_in_frames: 480,
+      fps: 60,
+    });
   });
 });

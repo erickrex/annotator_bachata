@@ -38,11 +38,12 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
     status: 'reviewed',
     remotion: { from_frame: 0, duration_in_frames: 900, fps: 30 },
     move_name: 'basic step',
-    move_label: 'basic',
-    tags: [],
+    tags: ['salsa'],
     difficulty: 'beginner',
-    energy_level: 'medium',
     style: 'traditional',
+    // Optional metadata (does not affect completeness)
+    move_label: 'basic',
+    energy_level: 'medium',
     estimated_tempo_bpm: 130,
     duration_seconds: 30,
     beats_total: 8,
@@ -54,12 +55,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
       cycle_number: 1,
       beat_start: 1,
       beat_end: 8,
-    },
-    completion_profile: {
-      basico_completion_counts: 1,
-      tempo_feel: 'even_finish',
-      accent_pattern: 'even',
-      syncopation_level: 0.2,
     },
     entry_state: {
       hold: 'closed',
@@ -78,7 +73,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
     motion_profile: {},
     camera_profile: {},
     quality_profile: {},
-    embedding_refs: {},
     ...overrides,
   };
 }
@@ -215,19 +209,6 @@ describe('auto-population', () => {
     const ann = svc.getAnnotation('clip1')!;
     expect(ann.estimated_tempo_bpm).toBe(140);
   });
-
-  it('sets trim defaults when trim_profile is missing', () => {
-    const svc = createAnnotationService();
-    svc.updateAnnotation('clip1', {
-      clip_id: 'clip1',
-      source_id: 'src1',
-      remotion: { from_frame: 0, duration_in_frames: 300, fps: 30 },
-      trim_profile: undefined as any,
-    } as Partial<ClipAnnotation>);
-    const ann = svc.getAnnotation('clip1')!;
-    expect(ann.trim_profile.trim_safe_start_seconds).toBe(0.0);
-    expect(ann.trim_profile.trim_safe_end_seconds).toBe(10); // 300/30
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -278,17 +259,17 @@ describe('calculateCompleteness', () => {
 
   it('returns less than 1.0 for partially filled annotation', () => {
     const svc = createAnnotationService();
-    const clip = makeValidClip({ move_name: '', move_label: '' as any });
+    const clip = makeValidClip({ move_name: '' });
     const completeness = svc.calculateCompleteness(clip);
     expect(completeness).toBeLessThan(1.0);
     expect(completeness).toBeGreaterThan(0);
   });
 
-  it('counts correctly: missing 2 of 23 fields', () => {
+  it('counts correctly: missing 1 of 10 required fields', () => {
     const svc = createAnnotationService();
-    const clip = makeValidClip({ move_name: '', move_label: '' as any });
+    const clip = makeValidClip({ move_name: '' });
     const completeness = svc.calculateCompleteness(clip);
-    expect(completeness).toBeCloseTo(21 / TOTAL_REQUIRED_FIELDS, 5);
+    expect(completeness).toBeCloseTo(9 / TOTAL_REQUIRED_FIELDS, 5);
   });
 });
 

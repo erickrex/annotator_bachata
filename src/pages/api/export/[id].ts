@@ -1,5 +1,5 @@
 // POST /api/export/:id — Export single clip to MP4.
-// Requirements: 12.1
+// Requirements: 2.1, 2.4
 
 import type { APIRoute } from 'astro';
 import { join } from 'node:path';
@@ -18,17 +18,16 @@ export const POST: APIRoute = async ({ params }) => {
     return errorResponse(`Clip not found: ${id}`, 404);
   }
 
-  const source = state.annotationService.getSource(clip.sourceId);
-  if (!source) {
-    return errorResponse(`Source not found: ${clip.sourceId}`, 404);
+  const annotation = state.annotationService.getAnnotation(id);
+  if (!annotation) {
+    return errorResponse(`Annotation not found for clip: ${id}`, 404);
   }
 
-  const sourceVideoPath = join(state.projectDir, source.video_file);
   const outputDir = join(state.projectDir, 'exports');
 
   try {
-    const outputPath = await exportClip(clip, sourceVideoPath, outputDir, source.energy_profile);
-    return jsonResponse({ clipId: id, outputPath });
+    const result = await exportClip({ clip, annotation, outputDir });
+    return jsonResponse(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return errorResponse(`Export failed: ${message}`, 500);

@@ -34,12 +34,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
       beat_start: 1,
       beat_end: 8,
     },
-    completion_profile: {
-      basico_completion_counts: 1,
-      tempo_feel: 'even_finish',
-      accent_pattern: 'even',
-      syncopation_level: 0.2,
-    },
     entry_state: {
       hold: 'closed',
       leader_weight_foot: 'left',
@@ -57,7 +51,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
     motion_profile: {},
     camera_profile: {},
     quality_profile: {},
-    embedding_refs: {},
     ...overrides,
   };
 }
@@ -66,8 +59,8 @@ const EMPTY_IDS = new Set<string>();
 const TOTAL_FRAMES = 10000;
 
 describe('Property 20: Cross-Field Consistency Validation', () => {
-  // (a) bars_total != beats_total / 4 should be rejected
-  it('(a) rejects bars_total != beats_total / 4', () => {
+  // (a) bars_total != beats_total / 4 — now optional, no longer validated
+  it('(a) accepts bars_total != beats_total / 4 (optional fields not validated)', () => {
     // Generate beats as a positive multiple of 4, then pick a wrong bars value
     const arb = fc
       .integer({ min: 1, max: 100 })
@@ -88,14 +81,15 @@ describe('Property 20: Cross-Field Consistency Validation', () => {
           bars_total: wrongBars,
         });
         const errors = validateClip(clip, EMPTY_IDS, TOTAL_FRAMES);
-        expect(errors.some((e) => e.rule === 'beats_bars')).toBe(true);
+        // Optional field cross-checks are no longer validated
+        expect(errors.some((e) => e.rule === 'beats_bars')).toBe(false);
       }),
       { numRuns: 100 },
     );
   });
 
-  // (b) rotation_direction=="none" with rotation_degrees!=0 should be rejected
-  it('(b) rejects rotation_direction=none with rotation_degrees!=0', () => {
+  // (b) rotation_direction=="none" with rotation_degrees!=0 — now optional, no longer validated
+  it('(b) accepts rotation_direction=none with rotation_degrees!=0 (optional fields not validated)', () => {
     const nonZeroDegArb = fc.integer({ min: 1, max: 360 });
     const stateKeyArb = fc.constantFrom('entry_state' as const, 'exit_state' as const);
 
@@ -109,14 +103,15 @@ describe('Property 20: Cross-Field Consistency Validation', () => {
         };
 
         const errors = validateClip(clip, EMPTY_IDS, TOTAL_FRAMES);
-        expect(errors.some((e) => e.rule === 'rotation_consistency')).toBe(true);
+        // Optional field cross-checks are no longer validated
+        expect(errors.some((e) => e.rule === 'rotation_consistency')).toBe(false);
       }),
       { numRuns: 100 },
     );
   });
 
-  // (c) travel_direction=="stationary" with travel_amount not in {none, low} should be rejected
-  it('(c) rejects stationary travel_direction with travel_amount not in {none, low}', () => {
+  // (c) travel_direction=="stationary" with travel_amount not in {none, low} — now optional, no longer validated
+  it('(c) accepts stationary travel_direction with travel_amount not in {none, low} (optional fields not validated)', () => {
     const badTravelAmountArb = fc.constantFrom('medium' as const, 'high' as const);
     const stateKeyArb = fc.constantFrom('entry_state' as const, 'exit_state' as const);
 
@@ -130,7 +125,8 @@ describe('Property 20: Cross-Field Consistency Validation', () => {
         clip.motion_profile = { ...clip.motion_profile, travel_amount: badAmount };
 
         const errors = validateClip(clip, EMPTY_IDS, TOTAL_FRAMES);
-        expect(errors.some((e) => e.rule === 'travel_consistency')).toBe(true);
+        // Optional field cross-checks are no longer validated
+        expect(errors.some((e) => e.rule === 'travel_consistency')).toBe(false);
       }),
       { numRuns: 100 },
     );
@@ -161,8 +157,8 @@ describe('Property 20: Cross-Field Consistency Validation', () => {
     );
   });
 
-  // (e) |duration_seconds - duration_in_frames/fps| > 0.001 should be rejected
-  it('(e) rejects duration_seconds inconsistent with duration_in_frames/fps', () => {
+  // (e) |duration_seconds - duration_in_frames/fps| > 0.001 — now optional, no longer validated
+  it('(e) accepts duration_seconds inconsistent with duration_in_frames/fps (optional fields not validated)', () => {
     const arb = fc
       .tuple(
         fc.integer({ min: 1, max: 5000 }),
@@ -189,7 +185,8 @@ describe('Property 20: Cross-Field Consistency Validation', () => {
           },
         });
         const errors = validateClip(clip, EMPTY_IDS, TOTAL_FRAMES);
-        expect(errors.some((e) => e.rule === 'duration_consistency')).toBe(true);
+        // Optional field cross-checks are no longer validated
+        expect(errors.some((e) => e.rule === 'duration_consistency')).toBe(false);
       }),
       { numRuns: 100 },
     );

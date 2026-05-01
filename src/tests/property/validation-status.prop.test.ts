@@ -34,12 +34,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
       beat_start: 1,
       beat_end: 8,
     },
-    completion_profile: {
-      basico_completion_counts: 1,
-      tempo_feel: 'even_finish',
-      accent_pattern: 'even',
-      syncopation_level: 0.2,
-    },
     entry_state: {
       hold: 'closed',
       leader_weight_foot: 'left',
@@ -57,7 +51,6 @@ function makeValidClip(overrides: Partial<ClipAnnotation> = {}): ClipAnnotation 
     motion_profile: {},
     camera_profile: {},
     quality_profile: {},
-    embedding_refs: {},
     ...overrides,
   };
 }
@@ -74,41 +67,21 @@ type InvalidClipMaker = (clip: ClipAnnotation) => void;
 const INVALIDATORS: { name: string; apply: InvalidClipMaker }[] = [
   { name: 'missing clip_id', apply: (c) => { (c as any).clip_id = ''; } },
   { name: 'missing move_name', apply: (c) => { (c as any).move_name = ''; } },
-  { name: 'invalid move_label', apply: (c) => { (c as any).move_label = 'INVALID'; } },
   { name: 'invalid difficulty', apply: (c) => { (c as any).difficulty = 'INVALID'; } },
-  { name: 'trim start >= end', apply: (c) => {
-    c.trim_profile.trim_safe_start_seconds = 20;
-    c.trim_profile.trim_safe_end_seconds = 10;
-  }},
-  { name: 'trim end > duration', apply: (c) => {
-    c.trim_profile.trim_safe_end_seconds = c.duration_seconds + 10;
-  }},
-  { name: 'bad beats/bars ratio', apply: (c) => {
-    c.beats_total = 16;
-    c.bars_total = 3; // should be 4
-  }},
-  { name: 'rotation none with degrees', apply: (c) => {
-    c.entry_state.rotation_direction = 'none';
-    c.entry_state.rotation_degrees = 90;
-  }},
+  { name: 'invalid style', apply: (c) => { (c as any).style = 'INVALID'; } },
+  { name: 'invalid status', apply: (c) => { (c as any).status = 'INVALID'; } },
+  { name: 'missing source_id', apply: (c) => { (c as any).source_id = ''; } },
   { name: 'negative from_frame', apply: (c) => {
     c.remotion.from_frame = -1;
   }},
   { name: 'zero duration_in_frames', apply: (c) => {
     c.remotion.duration_in_frames = 0;
   }},
-  { name: 'float score out of range', apply: (c) => {
-    c.quality_profile = { visibility_score: 1.5 };
+  { name: 'zero fps', apply: (c) => {
+    c.remotion.fps = 0;
   }},
-  { name: 'negative spin_count', apply: (c) => {
-    c.motion_profile = { spin_count: -1 };
-  }},
-  { name: 'body orientation out of range', apply: (c) => {
-    c.entry_state.body_orientation_degrees = 400;
-  }},
-  { name: 'duration inconsistency', apply: (c) => {
-    c.duration_seconds = c.remotion.duration_in_frames / c.remotion.fps + 5;
-    c.trim_profile.trim_safe_end_seconds = c.duration_seconds;
+  { name: 'missing tags (null)', apply: (c) => {
+    (c as any).tags = null;
   }},
 ];
 

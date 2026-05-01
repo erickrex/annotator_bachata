@@ -1,5 +1,5 @@
 // POST /api/export/batch — Export all non-discarded clips.
-// Requirements: 12.2, 15.3, 15.4
+// Requirements: 2.1, 2.4
 
 import type { APIRoute } from 'astro';
 import { join } from 'node:path';
@@ -16,21 +16,22 @@ export const POST: APIRoute = async () => {
 
   const outputDir = join(state.projectDir, 'exports');
 
-  // Resolve source video path and analyzed overlay data per clip.
-  const resolveSourceData = (clip: { sourceId: string }) => {
-    const source = state.annotationService.getSource(clip.sourceId);
-    if (!source) {
-      throw new Error(`Source not found for clip: ${clip.sourceId}`);
+  // Collect clip/annotation pairs for batch export
+  const pairs: Array<{ clip: typeof allClips[0]; annotation: NonNullable<ReturnType<typeof state.annotationService.getAnnotation>> }> = [];
+  for (const clip of allClips) {
+    const annotation = state.annotationService.getAnnotation(clip.clipId);
+    if (annotation) {
+      pairs.push({ clip, annotation });
     }
-    return {
-      sourceVideoPath: join(state.projectDir, source.video_file),
-      energyProfile: source.energy_profile,
-    };
-  };
+  }
+
+  if (pairs.length === 0) {
+    return errorResponse('No clips with annotations available for export', 400);
+  }
 
   try {
-    const results: Array<{ clipId: string; outputPath: string }> = [];
-    const gen = exportBatch(allClips, resolveSourceData, outputDir, () => {});
+    const results: Array<{ clipId: string; outputPath: string; sidecarPath: string }> = [];
+    const gen = exportBatch(pairs, outputDir);
 
     for await (const result of gen) {
       results.push(result);
