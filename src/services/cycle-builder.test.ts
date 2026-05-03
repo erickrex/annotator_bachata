@@ -133,3 +133,108 @@ describe('recomputeWithDownbeat', () => {
     expect(recomputed.cycles8[0].startBeatIndex).toBe(8);
   });
 });
+
+describe('buildCycles with configurable beatsPerCycle', () => {
+  // Use a 32-beat grid so we can test all cycle sizes with at least one full cycle
+  const { timestamps, frames } = makeBeatGrid(32, 0, INTERVAL, FPS);
+
+  it('produces 8-beat cycles when beatsPerCycle is omitted (backward compatibility)', () => {
+    const result = buildCycles(frames, timestamps, 0);
+
+    expect(result.cycles8).toHaveLength(4); // 32 / 8 = 4
+    for (const cycle of result.cycles8) {
+      const span = cycle.endBeatIndex - cycle.startBeatIndex + 1;
+      expect(span).toBe(8);
+    }
+  });
+
+  it('produces 4-beat cycles when beatsPerCycle=4', () => {
+    const result = buildCycles(frames, timestamps, 0, 4);
+
+    expect(result.cycles8).toHaveLength(8); // 32 / 4 = 8
+    for (const cycle of result.cycles8) {
+      const span = cycle.endBeatIndex - cycle.startBeatIndex + 1;
+      expect(span).toBe(4);
+    }
+    // First cycle: beats 0–3
+    expect(result.cycles8[0].startBeatIndex).toBe(0);
+    expect(result.cycles8[0].endBeatIndex).toBe(3);
+    // Second cycle: beats 4–7
+    expect(result.cycles8[1].startBeatIndex).toBe(4);
+    expect(result.cycles8[1].endBeatIndex).toBe(7);
+  });
+
+  it('produces 16-beat cycles when beatsPerCycle=16', () => {
+    const result = buildCycles(frames, timestamps, 0, 16);
+
+    expect(result.cycles8).toHaveLength(2); // 32 / 16 = 2
+    for (const cycle of result.cycles8) {
+      const span = cycle.endBeatIndex - cycle.startBeatIndex + 1;
+      expect(span).toBe(16);
+    }
+    // First cycle: beats 0–15
+    expect(result.cycles8[0].startBeatIndex).toBe(0);
+    expect(result.cycles8[0].endBeatIndex).toBe(15);
+    // Second cycle: beats 16–31
+    expect(result.cycles8[1].startBeatIndex).toBe(16);
+    expect(result.cycles8[1].endBeatIndex).toBe(31);
+  });
+
+  it('produces 32-beat cycles when beatsPerCycle=32', () => {
+    const result = buildCycles(frames, timestamps, 0, 32);
+
+    expect(result.cycles8).toHaveLength(1); // 32 / 32 = 1
+    const cycle = result.cycles8[0];
+    const span = cycle.endBeatIndex - cycle.startBeatIndex + 1;
+    expect(span).toBe(32);
+    expect(cycle.startBeatIndex).toBe(0);
+    expect(cycle.endBeatIndex).toBe(31);
+  });
+
+  it('discards leftover beats for beatsPerCycle=4', () => {
+    // 35 beats: 35 / 4 = 8 full cycles, 3 leftover
+    const grid = makeBeatGrid(35, 0, INTERVAL, FPS);
+    const result = buildCycles(grid.frames, grid.timestamps, 0, 4);
+
+    expect(result.cycles8).toHaveLength(8);
+  });
+
+  it('discards leftover beats for beatsPerCycle=16', () => {
+    // 35 beats: 35 / 16 = 2 full cycles, 3 leftover
+    const grid = makeBeatGrid(35, 0, INTERVAL, FPS);
+    const result = buildCycles(grid.frames, grid.timestamps, 0, 16);
+
+    expect(result.cycles8).toHaveLength(2);
+  });
+
+  it('computes phrases16 correctly for beatsPerCycle=4 (groups of 4 cycles)', () => {
+    const result = buildCycles(frames, timestamps, 0, 4);
+
+    // 8 cycles of 4 beats each; phrases16 groups 16/4=4 cycles per phrase → 2 phrases
+    expect(result.phrases16).toHaveLength(2);
+    expect(result.phrases16[0].cycles).toHaveLength(4);
+    expect(result.phrases16[1].cycles).toHaveLength(4);
+  });
+
+  it('computes phrases32 correctly for beatsPerCycle=4 (groups of 8 cycles)', () => {
+    const result = buildCycles(frames, timestamps, 0, 4);
+
+    // 8 cycles of 4 beats each; phrases32 groups 32/4=8 cycles per phrase → 1 phrase
+    expect(result.phrases32).toHaveLength(1);
+    expect(result.phrases32[0].cycles).toHaveLength(8);
+  });
+
+  it('returns empty phrases32 when beatsPerCycle=32 (32/32=1, only 1 cycle per phrase, but need grouping)', () => {
+    const result = buildCycles(frames, timestamps, 0, 32);
+
+    // 32/32 = 1 cycle per phrase32 group → 1 phrase32
+    expect(result.phrases32).toHaveLength(1);
+  });
+
+  it('returns empty phrases16 when beatsPerCycle=32 (16/32 < 1)', () => {
+    const result = buildCycles(frames, timestamps, 0, 32);
+
+    // 16/32 = 0.5 < 1, so no phrases16
+    expect(result.phrases16).toHaveLength(0);
+  });
+});

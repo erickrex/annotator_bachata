@@ -17,6 +17,16 @@ import Layout from '../layouts/Layout.astro';
         <button type="submit" id="submit-btn">Download</button>
       </form>
 
+      <div class="beat-count-row">
+        <label for="beat-count-select">Beats per clip</label>
+        <select id="beat-count-select">
+          <option value="4">4</option>
+          <option value="8" selected>8</option>
+          <option value="16">16</option>
+          <option value="32">32</option>
+        </select>
+      </div>
+
       <div id="error-msg" class="error" style="display:none;"></div>
 
       <div id="progress-section" style="display:none;">
@@ -87,6 +97,33 @@ import Layout from '../layouts/Layout.astro';
   }
   button:hover { background: #1d4ed8; }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .beat-count-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .beat-count-row label {
+    font-size: 0.85rem;
+    color: #aaa;
+  }
+  .beat-count-row select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .beat-count-row select:focus {
+    border-color: #555;
+  }
+  .beat-count-row select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
   .error {
     margin-top: 12px;
     padding: 8px 12px;
@@ -141,12 +178,27 @@ import Layout from '../layouts/Layout.astro';
   const form = document.getElementById('ingest-form') as HTMLFormElement;
   const urlInput = document.getElementById('url-input') as HTMLInputElement;
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+  const beatCountSelect = document.getElementById('beat-count-select') as HTMLSelectElement;
   const errorMsg = document.getElementById('error-msg') as HTMLDivElement;
   const progressSection = document.getElementById('progress-section') as HTMLDivElement;
   const progressPct = document.getElementById('progress-pct') as HTMLSpanElement;
   const progressBar = document.getElementById('progress-bar') as HTMLDivElement;
   const progressDetail = document.getElementById('progress-detail') as HTMLDivElement;
   const completeSection = document.getElementById('complete-section') as HTMLDivElement;
+
+  // Initialize beat count from localStorage
+  const validBeatCounts = ['4', '8', '16', '32'];
+  const stored = localStorage.getItem('beatCountPreference');
+  if (stored && validBeatCounts.includes(stored)) {
+    beatCountSelect.value = stored;
+  } else {
+    beatCountSelect.value = '8';
+  }
+
+  // Persist selection on change
+  beatCountSelect.addEventListener('change', () => {
+    localStorage.setItem('beatCountPreference', beatCountSelect.value);
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -163,6 +215,7 @@ import Layout from '../layouts/Layout.astro';
     progressPct.textContent = '0%';
     progressDetail.textContent = '';
     submitBtn.disabled = true;
+    beatCountSelect.disabled = true;
 
     try {
       console.log('[ingest-ui] sending POST /api/ingest');
@@ -234,7 +287,7 @@ import Layout from '../layouts/Layout.astro';
             const generateRes = await fetch('/api/clips/generate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ sourceId, beatCount: 16 }),
+              body: JSON.stringify({ sourceId, beatCount: parseInt(beatCountSelect.value, 10) }),
             });
             if (!generateRes.ok) {
               console.error(`[ingest-ui] clip generation failed: ${generateRes.status}`);
@@ -258,6 +311,7 @@ import Layout from '../layouts/Layout.astro';
       errorMsg.style.display = 'block';
     } finally {
       submitBtn.disabled = false;
+      beatCountSelect.disabled = false;
     }
   });
 </script>

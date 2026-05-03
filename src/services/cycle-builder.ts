@@ -6,23 +6,26 @@ import type { Cycle, CycleHierarchy, Phrase } from '../types/index.js';
 const BEATS_PER_CYCLE = 8;
 
 /**
- * Group beats into 8-count Cycle objects starting from the downbeat index,
- * then assemble 16-count and 32-count Phrase objects.
+ * Group beats into Cycle objects of the specified size starting from the
+ * downbeat index, then assemble 16-count and 32-count Phrase objects.
  *
- * Leftover beats that don't form a complete 8-count cycle are discarded.
+ * Leftover beats that don't form a complete cycle are discarded.
+ *
+ * @param beatsPerCycle - Number of beats per cycle (4, 8, 16, or 32). Defaults to 8.
  */
 export function buildCycles(
   beatGridFrames: number[],
   beatGridTimestamps: number[],
   downbeatIndex: number,
+  beatsPerCycle: 4 | 8 | 16 | 32 = 8,
 ): CycleHierarchy {
   const beatsFromDownbeat = beatGridTimestamps.length - downbeatIndex;
-  const cycleCount = Math.floor(beatsFromDownbeat / BEATS_PER_CYCLE);
+  const cycleCount = Math.floor(beatsFromDownbeat / beatsPerCycle);
 
   const cycles8: Cycle[] = [];
   for (let i = 0; i < cycleCount; i++) {
-    const startIdx = downbeatIndex + i * BEATS_PER_CYCLE;
-    const endIdx = startIdx + BEATS_PER_CYCLE - 1;
+    const startIdx = downbeatIndex + i * beatsPerCycle;
+    const endIdx = startIdx + beatsPerCycle - 1;
     cycles8.push({
       cycleNumber: i + 1,
       startBeatIndex: startIdx,
@@ -34,8 +37,16 @@ export function buildCycles(
     });
   }
 
-  const phrases16 = buildPhrases(cycles8, 2);
-  const phrases32 = buildPhrases(cycles8, 4);
+  // Compute how many base cycles make up 16 beats and 32 beats
+  const cyclesFor16Beats = 16 / beatsPerCycle;
+  const cyclesFor32Beats = 32 / beatsPerCycle;
+
+  const phrases16 = cyclesFor16Beats >= 1
+    ? buildPhrases(cycles8, cyclesFor16Beats)
+    : [];
+  const phrases32 = cyclesFor32Beats >= 1
+    ? buildPhrases(cycles8, cyclesFor32Beats)
+    : [];
 
   return { cycles8, phrases16, phrases32 };
 }

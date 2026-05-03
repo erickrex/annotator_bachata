@@ -3,6 +3,7 @@
 
 import type { APIRoute } from 'astro';
 import { join } from 'node:path';
+import { buildCycles } from '../../../services/cycle-builder.js';
 import { createClips } from '../../../services/clip-manager.js';
 import { extractAllClips, DEFAULT_HANDLE_SECONDS } from '../../../services/clip-extraction-service.js';
 import {
@@ -26,10 +27,10 @@ export const POST: APIRoute = async ({ request }) => {
     return errorResponse('Missing required field: sourceId');
   }
 
-  const validBeatCounts = [8, 16, 32] as const;
-  const bc = (beatCount ?? 16) as 8 | 16 | 32;
+  const validBeatCounts = [4, 8, 16, 32] as const;
+  const bc = (beatCount ?? 8) as 4 | 8 | 16 | 32;
   if (!validBeatCounts.includes(bc)) {
-    return errorResponse('beatCount must be 8, 16, or 32');
+    return errorResponse('beatCount must be 4, 8, 16, or 32');
   }
 
   const state = getAppState();
@@ -43,7 +44,15 @@ export const POST: APIRoute = async ({ request }) => {
     return errorResponse(`No cycle data for source: ${sourceId}. Run analysis first.`, 400);
   }
 
-  const clips = createClips(sourceId, cycles, bc, source.fps, source.beat_grid_frames);
+  // Rebuild cycles at the requested beat count
+  const cyclesForBeatCount = buildCycles(
+    source.beat_grid_frames,
+    source.beat_grid,
+    0, // downbeat index
+    bc,
+  );
+
+  const clips = createClips(sourceId, cyclesForBeatCount, bc, source.fps, source.beat_grid_frames);
 
   // Extract each clip as its own MP4 with handles for boundary adjustment
   const projectDir = state.projectDir;

@@ -1,9 +1,9 @@
 // Clip Manager — pure functions for creating, merging, splitting, and adjusting virtual clips.
-// Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 5.7, 5.8, 5.9
+// Requirements: 2.2, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 5.7, 5.8, 5.9
 
 import type { CycleHierarchy, Cycle, VirtualClipDef } from '../types/index.js';
 
-const BEATS_PER_CYCLE = 8;
+const DEFAULT_BEATS_PER_CYCLE = 8;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -26,9 +26,11 @@ function makeClipId(sourceId: string, cycleNumber: number, beatCount: number): s
 /**
  * Generate VirtualClipDef objects from a CycleHierarchy at the given beat count.
  *
- * - beatCount=8  → each 8-count cycle becomes one clip
- * - beatCount=16 → each pair of consecutive cycles becomes one clip
- * - beatCount=32 → each group of 4 consecutive cycles becomes one clip
+ * The cycle builder produces cycles at the requested beat count size, so each
+ * cycle in the hierarchy maps 1:1 to a clip. For backward compatibility, if
+ * the cycles are smaller than the requested beat count (e.g., 8-beat cycles
+ * with beatCount=16), consecutive cycles are grouped to form clips of the
+ * correct size.
  *
  * Each clip starts on count 1 (start of a cycle) and spans complete cycles.
  * Beat marker frames are the beat frame numbers within the clip's range.
@@ -36,29 +38,33 @@ function makeClipId(sourceId: string, cycleNumber: number, beatCount: number): s
 export function createClips(
   sourceId: string,
   cycles: CycleHierarchy,
-  beatCount: 8 | 16 | 32,
+  beatCount: 4 | 8 | 16 | 32,
   fps: number,
   beatGridFrames?: number[],
 ): VirtualClipDef[] {
-  const cyclesPerClip = beatCount / BEATS_PER_CYCLE;
   const allCycles = cycles.cycles8;
-  const clipCount = Math.floor(allCycles.length / cyclesPerClip);
+  if (allCycles.length === 0) return [];
+
+  // Determine the actual beats per cycle from the data
+  const beatsPerCycleInData = allCycles[0].endBeatIndex - allCycles[0].startBeatIndex + 1;
+
+  // How many cycles from the hierarchy are needed to form one clip
+  const cyclesPerClip = beatCount / beatsPerCycleInData;
+  const clipCount = cyclesPerClip >= 1
+    ? Math.floor(allCycles.length / cyclesPerClip)
+    : allCycles.length; // each cycle maps 1:1 when cycles are already the right size
+
+  const effectiveCyclesPerClip = cyclesPerClip >= 1 ? cyclesPerClip : 1;
 
   const clips: VirtualClipDef[] = [];
 
   for (let i = 0; i < clipCount; i++) {
-    const group = allCycles.slice(i * cyclesPerClip, (i + 1) * cyclesPerClip);
+    const group = allCycles.slice(i * effectiveCyclesPerClip, (i + 1) * effectiveCyclesPerClip);
     const firstCycle = group[0];
     const lastCycle = group[group.length - 1];
 
     const fromFrame = firstCycle.startFrame;
     const endFrame = lastCycle.endFrame;
-    // durationInFrames = endFrame - fromFrame + 1 would include the last beat frame.
-    // However, the clip spans from the start of the first beat to the start of the
-    // next cycle (or the last beat of the last cycle). We use endFrame - fromFrame
-    // so the clip covers up to (but not including) the next cycle's first frame.
-    // But endFrame here is the frame of the last beat in the group, so duration
-    // should include that frame: endFrame - fromFrame + 1.
     const durationInFrames = endFrame - fromFrame + 1;
 
     // Beat markers: prefer the original beat grid when available so markers stay
@@ -71,7 +77,7 @@ export function createClips(
           ...beatGridFrames.slice(cycle.startBeatIndex, cycle.endBeatIndex + 1),
         );
       } else {
-        beatMarkerFrames.push(...interpolateBeatFrames(cycle, BEATS_PER_CYCLE));
+        beatMarkerFrames.push(...interpolateBeatFrames(cycle, beatsPerCycleInData));
       }
     }
 
@@ -96,7 +102,7 @@ export function createClips(
 
 /**
  * Interpolate beat frame positions within a cycle.
- * A cycle spans BEATS_PER_CYCLE beats from startFrame to endFrame.
+ * A cycle spans beatsPerCycle beats from startFrame to endFrame.
  * We linearly interpolate to get each beat's frame.
  */
 function interpolateBeatFrames(cycle: Cycle, beatsPerCycle: number): number[] {
@@ -183,8 +189,8 @@ export function splitClip(
   const cyclesA = clipCycles.slice(0, bestIdx);
   const cyclesB = clipCycles.slice(bestIdx);
 
-  const beatCountA = cyclesA.length * BEATS_PER_CYCLE;
-  const beatCountB = cyclesB.length * BEATS_PER_CYCLE;
+  const beatCountA = cyclesA.length * DEFAULT_BEATS_PER_CYCLE;
+  const beatCountB = cyclesB.length * DEFAULT_BEATS_PER_CYCLE;
 
   const splitFrame = cyclesB[0].startFrame;
   const splitOffset = splitFrame - clipFrom;

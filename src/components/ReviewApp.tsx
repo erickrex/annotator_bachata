@@ -1,10 +1,9 @@
 // ReviewApp — top-level React island for the review page.
 // Fetches clips and annotations from the API and wires all sub-components.
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   ClipAnnotation,
-  EnumDefinitions,
   SourceRecord,
   ValidationError,
   VirtualClipDef,
@@ -14,6 +13,8 @@ import { ClipGrid } from './ClipGrid.js';
 import { ClipPreviewPlayer } from './ClipPreviewPlayer.js';
 import { AnnotationForm } from './AnnotationForm.js';
 import { TrimControls } from './TrimControls.js';
+import { VideoGroup } from './VideoGroup.js';
+import { buildFolderName } from '../services/slug-utils.js';
 
 function resolveMediaUrl(relativePath: string): string {
   if (!relativePath) return '';
@@ -31,6 +32,7 @@ export const ReviewApp: React.FC = () => {
   const [currentFrame, setCurrentFrame] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const loadReviewState = useCallback(async (preferredClipId: string | null = null) => {
     try {
@@ -81,6 +83,35 @@ export const ReviewApp: React.FC = () => {
 
   const selectedClip = clips.find((c) => c.clipId === selectedClipId) ?? null;
   const selectedAnnotation = selectedClipId ? annotations.get(selectedClipId) ?? null : null;
+
+  // Group clips by sourceId and sort groups by downloaded_at descending
+  const groupedClips = useMemo(() => {
+    const groups = new Map<string, VirtualClipDef[]>();
+    for (const clip of clips) {
+      const existing = groups.get(clip.sourceId);
+      if (existing) {
+        existing.push(clip);
+      } else {
+        groups.set(clip.sourceId, [clip]);
+      }
+    }
+
+    const sortedEntries = [...groups.entries()].sort((a, b) => {
+      const sourceA = sources.get(a[0]);
+      const sourceB = sources.get(b[0]);
+      const dateA = sourceA?.downloaded_at || '1970-01-01T00:00:00Z';
+      const dateB = sourceB?.downloaded_at || '1970-01-01T00:00:00Z';
+      return dateB.localeCompare(dateA);
+    });
+
+    return sortedEntries.map(([sourceId, groupClips]) => {
+      const source = sources.get(sourceId);
+      const folderName = source
+        ? buildFolderName(source.downloaded_at || '1970-01-01', source.title, sourceId)
+        : sourceId;
+      return { sourceId, folderName, clips: groupClips };
+    });
+  }, [clips, sources]);
 
   const handleFrameChange = useCallback((frame: number) => {
     setCurrentFrame(frame);
@@ -312,17 +343,43 @@ export const ReviewApp: React.FC = () => {
           </div>
         )}
         <div style={{ background: '#0a0a0a', overflowY: 'auto', padding: 8, borderRight: '1px solid #222' }}>
-          <ClipGrid
-            clips={clips}
-            annotations={annotations}
-            completenessMap={completenessMap}
-            selectedClipId={selectedClipId}
-            onSelectClip={handleSelectClip}
-            onDiscardClip={handleDiscardClip}
-            onMergeClips={handleMergeClips}
-            onSplitClip={handleSplitClip}
-            currentFrame={currentFrame}
-          />
+          {groupedClips.map((group) => (
+            <VideoGroup
+              key={group.sourceId}
+              sourceId={group.sourceId}
+              folderName={group.folderName}
+              clipCount={group.clips.length}
+              collapsed={collapsedGroups.has(group.sourceId)}
+              onToggle={() => {
+                setCollapsedGroups((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(group.sourceId)) {
+                    next.delete(group.sourceId);
+                  } else {
+                    next.add(group.sourceId);
+                  }
+                  return next;
+                });
+              }}
+            >
+              <ClipGrid
+                clips={group.clips}
+                annotations={annotations}
+                completenessMap={completenessMap}
+                selectedClipId={selectedClipId}
+                onSelectClip={handleSelectClip}
+                onDiscardClip={handleDiscardClip}
+                onMergeClips={handleMergeClips}
+                onSplitClip={handleSplitClip}
+                currentFrame={currentFrame}
+              />
+            </VideoGroup>
+          ))}
+          {clips.length === 0 && (
+            <div style={{ color: '#666', padding: 16, textAlign: 'center' }}>
+              No clips generated yet.
+            </div>
+          )}
         </div>
         <div
           style={{
