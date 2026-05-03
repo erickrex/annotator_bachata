@@ -9,7 +9,7 @@ interface MotionSectionProps {
 }
 
 export function MotionSection({ annotation, enumDefinitions, onFieldChange, validationErrors }: MotionSectionProps) {
-  const motion = annotation.motion_profile;
+  const motion = annotation.motion_profile ?? {};
 
   return (
     <div style={sectionStyle}>

@@ -2,8 +2,8 @@
   "schema_version": "2.0",
   "project": {
     "name": "Bachata Clip Library",
-    "created_at": "2026-04-29T22:40:06.855Z",
-    "updated_at": "2026-04-29T22:41:54.252Z"
+    "created_at": "2026-05-01T12:19:02.643Z",
+    "updated_at": "2026-05-01T12:21:24.933Z"
   },
   "sources": [
     {
@@ -7829,7 +7829,7 @@
         0,
         0
       ],
-      "downloaded_at": "2026-04-29T22:41:06.621Z"
+      "downloaded_at": "2026-05-01T12:20:33.138Z"
     }
   ],
   "enum_definitions": {
@@ -7994,47 +7994,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 7.033333333333333,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c003_016",
@@ -8046,47 +8012,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.9,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c005_016",
@@ -8098,47 +8030,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.9,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c007_016",
@@ -8150,47 +8048,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c009_016",
@@ -8202,47 +8066,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.833333333333333,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c011_016",
@@ -8254,47 +8084,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c013_016",
@@ -8306,47 +8102,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c015_016",
@@ -8358,47 +8120,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c017_016",
@@ -8410,47 +8138,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c019_016",
@@ -8462,47 +8156,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 7.066666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c021_016",
@@ -8514,47 +8174,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c023_016",
@@ -8566,47 +8192,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c025_016",
@@ -8618,47 +8210,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c027_016",
@@ -8670,47 +8228,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.9,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c029_016",
@@ -8722,47 +8246,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 7.1,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c031_016",
@@ -8774,47 +8264,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.9,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c033_016",
@@ -8826,47 +8282,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.966666666666667,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c035_016",
@@ -8878,47 +8300,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 7.1,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c037_016",
@@ -8930,47 +8318,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.833333333333333,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c039_016",
@@ -8982,47 +8336,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     },
     {
       "clip_id": "yt_Wl8eVgb_f3U_c041_016",
@@ -9034,47 +8354,13 @@
         "fps": 30
       },
       "move_name": "",
-      "move_label": "",
       "tags": [],
       "difficulty": "",
-      "energy_level": "",
       "style": "",
-      "estimated_tempo_bpm": 129.2,
       "duration_seconds": 6.866666666666666,
+      "estimated_tempo_bpm": 129.2,
       "beats_total": 15,
-      "bars_total": 3.75,
-      "phrase_resolution": "",
-      "song_position": {
-        "start_time_seconds": 0,
-        "end_time_seconds": 0,
-        "cycle_number": 0,
-        "beat_start": 0,
-        "beat_end": 0
-      },
-      "completion_profile": {
-        "basico_completion_counts": 0,
-        "tempo_feel": "",
-        "accent_pattern": "",
-        "syncopation_level": 0
-      },
-      "entry_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "exit_state": {
-        "hold": "",
-        "leader_weight_foot": "",
-        "follower_weight_foot": ""
-      },
-      "trim_profile": {
-        "trim_safe_start_seconds": 0,
-        "trim_safe_end_seconds": 0
-      },
-      "motion_profile": {},
-      "camera_profile": {},
-      "quality_profile": {},
-      "embedding_refs": {}
+      "bars_total": 3.75
     }
   ],
   "virtual_clips": [

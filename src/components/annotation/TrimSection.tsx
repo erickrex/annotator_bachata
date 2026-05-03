@@ -9,7 +9,7 @@ interface TrimSectionProps {
 }
 
 export function TrimSection({ annotation, onFieldChange, validationErrors }: TrimSectionProps) {
-  const trim = annotation.trim_profile;
+  const trim = annotation.trim_profile ?? { trim_safe_start_seconds: 0, trim_safe_end_seconds: 0 };
   const [entryBeatInput, setEntryBeatInput] = useState('');
   const [exitBeatInput, setExitBeatInput] = useState('');
 

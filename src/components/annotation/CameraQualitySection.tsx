@@ -38,8 +38,8 @@ function FloatSlider({
 }
 
 export function CameraQualitySection({ annotation, enumDefinitions, onFieldChange, validationErrors }: CameraQualitySectionProps) {
-  const cam = annotation.camera_profile;
-  const qual = annotation.quality_profile;
+  const cam = annotation.camera_profile ?? {};
+  const qual = annotation.quality_profile ?? {};
 
   return (
     <div style={sectionStyle}>

@@ -17,7 +17,7 @@ export function PhrasingSection({ annotation, enumDefinitions, onFieldChange, va
         <input
           type="number"
           style={inputStyle}
-          value={annotation.estimated_tempo_bpm}
+          value={annotation.estimated_tempo_bpm ?? ''}
           onChange={(e) => onFieldChange('estimated_tempo_bpm', parseFloat(e.target.value) || 0)}
         />
       </FieldWrapper>
@@ -26,7 +26,7 @@ export function PhrasingSection({ annotation, enumDefinitions, onFieldChange, va
         <input
           type="number"
           style={{ ...inputStyle, opacity: 0.7 }}
-          value={annotation.duration_seconds}
+          value={annotation.duration_seconds ?? ''}
           readOnly
         />
       </FieldWrapper>
@@ -35,7 +35,7 @@ export function PhrasingSection({ annotation, enumDefinitions, onFieldChange, va
         <input
           type="number"
           style={{ ...inputStyle, opacity: 0.7 }}
-          value={annotation.beats_total}
+          value={annotation.beats_total ?? ''}
           readOnly
         />
       </FieldWrapper>
@@ -44,7 +44,7 @@ export function PhrasingSection({ annotation, enumDefinitions, onFieldChange, va
         <input
           type="number"
           style={{ ...inputStyle, opacity: 0.7 }}
-          value={annotation.bars_total}
+          value={annotation.bars_total ?? ''}
           readOnly
         />
       </FieldWrapper>
@@ -52,7 +52,7 @@ export function PhrasingSection({ annotation, enumDefinitions, onFieldChange, va
       <FieldWrapper label="Phrase Resolution" fieldPath="phrase_resolution" validationErrors={validationErrors}>
         <select
           style={selectStyle}
-          value={annotation.phrase_resolution}
+          value={annotation.phrase_resolution ?? ''}
           onChange={(e) => onFieldChange('phrase_resolution', e.target.value)}
         >
           <option value="">-- select --</option>

@@ -15,6 +15,11 @@ import { ClipPreviewPlayer } from './ClipPreviewPlayer.js';
 import { AnnotationForm } from './AnnotationForm.js';
 import { TrimControls } from './TrimControls.js';
 
+function resolveMediaUrl(relativePath: string): string {
+  if (!relativePath) return '';
+  return `/api/media/${relativePath.split('/').map((s) => encodeURIComponent(s)).join('/')}`;
+}
+
 export const ReviewApp: React.FC = () => {
   const [clips, setClips] = useState<VirtualClipDef[]>([]);
   const [annotations, setAnnotations] = useState<Map<string, ClipAnnotation>>(new Map());
@@ -335,6 +340,7 @@ export const ReviewApp: React.FC = () => {
                 clip={selectedClip}
                 beatMarkerFrames={selectedClip.beatMarkerFrames}
                 energyProfile={sources.get(selectedClip.sourceId)?.energy_profile ?? []}
+                sourceVideoPath={resolveMediaUrl(sources.get(selectedClip.sourceId)?.video_file ?? '')}
                 onFrameChange={handleFrameChange}
                 onNextClip={handleNextClip}
                 onPrevClip={handlePrevClip}

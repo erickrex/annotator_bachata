@@ -2,12 +2,18 @@ import type { DancerState, EnumDefinitions, ValidationError } from '../../types/
 import { FieldWrapper, inputStyle, selectStyle, sectionStyle, sectionTitleStyle } from './FieldWrapper.js';
 
 interface EntryExitSectionProps {
-  entryState: DancerState;
-  exitState: DancerState;
+  entryState: DancerState | undefined;
+  exitState: DancerState | undefined;
   enumDefinitions: EnumDefinitions;
   onFieldChange: (fieldPath: string, value: unknown) => void;
   validationErrors: ValidationError[];
 }
+
+const EMPTY_DANCER_STATE: DancerState = {
+  hold: '' as any,
+  leader_weight_foot: '' as any,
+  follower_weight_foot: '' as any,
+};
 
 interface DancerStateFormProps {
   prefix: string;
@@ -149,7 +155,7 @@ export function EntryExitSection({ entryState, exitState, enumDefinitions, onFie
       <DancerStateForm
         prefix="entry_state"
         title="Entry State"
-        state={entryState}
+        state={entryState ?? EMPTY_DANCER_STATE}
         enumDefinitions={enumDefinitions}
         onFieldChange={onFieldChange}
         validationErrors={validationErrors}
@@ -157,7 +163,7 @@ export function EntryExitSection({ entryState, exitState, enumDefinitions, onFie
       <DancerStateForm
         prefix="exit_state"
         title="Exit State"
-        state={exitState}
+        state={exitState ?? EMPTY_DANCER_STATE}
         enumDefinitions={enumDefinitions}
         onFieldChange={onFieldChange}
         validationErrors={validationErrors}

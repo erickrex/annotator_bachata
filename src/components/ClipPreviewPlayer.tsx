@@ -5,9 +5,13 @@ export interface ClipPreviewPlayerProps {
   clip: VirtualClipDef;
   beatMarkerFrames: number[];
   energyProfile: number[];
+  /** Fallback source video URL for unextracted clips */
+  sourceVideoPath?: string;
   onFrameChange?: (frame: number) => void;
   onNextClip?: () => void;
   onPrevClip?: () => void;
+  /** Whether to show the beat/energy overlay (default: false) */
+  showOverlay?: boolean;
 }
 
 /**
@@ -21,9 +25,11 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
   clip,
   beatMarkerFrames,
   energyProfile,
+  sourceVideoPath,
   onFrameChange,
   onNextClip,
   onPrevClip,
+  showOverlay = false,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,14 +39,23 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [videoSize, setVideoSize] = useState({ width: 640, height: 360 });
+  const [overlayVisible, setOverlayVisible] = useState(showOverlay);
 
   const fps = clip.remotion.fps || 30;
 
+  // Determine if we're using the extracted file or falling back to source video
+  const hasExtracted = Boolean(clip.extractedFile);
+  const hasSource = Boolean(sourceVideoPath);
+
   // Compute the effective in/out points in seconds
-  const inPoint = clip.inPoint ?? clip.handleBefore ?? 0;
-  const outPoint = clip.outPoint ?? (
-    (clip.handleBefore ?? 0) + clip.remotion.durationInFrames / fps
-  );
+  // For extracted clips: relative to the extracted file (which includes handles)
+  // For source fallback: absolute position in the source video
+  const inPoint = hasExtracted
+    ? (clip.inPoint ?? clip.handleBefore ?? 0)
+    : (clip.remotion.fromFrame / fps);
+  const outPoint = hasExtracted
+    ? (clip.outPoint ?? ((clip.handleBefore ?? 0) + clip.remotion.durationInFrames / fps))
+    : ((clip.remotion.fromFrame + clip.remotion.durationInFrames) / fps);
 
   // Convert current time to frame number relative to the trimmed region
   const timeToFrame = useCallback((time: number): number => {
@@ -58,6 +73,8 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
 
     const { width, height } = canvas;
     ctx.clearRect(0, 0, width, height);
+
+    if (!overlayVisible) return;
 
     const currentTime = video.currentTime;
     const duration = outPoint - inPoint;
@@ -116,7 +133,7 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
       ctx.lineTo(x, height);
       ctx.stroke();
     }
-  }, [beatMarkerFrames, energyProfile, inPoint, outPoint, fps]);
+  }, [overlayVisible, beatMarkerFrames, energyProfile, inPoint, outPoint, fps]);
 
   // Animation loop for canvas redraw
   const startAnimationLoop = useCallback(() => {
@@ -150,7 +167,7 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
   // Set video to inPoint when clip loads or changes
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !clip.extractedFile) return;
+    if (!video) return;
 
     const handleLoadedMetadata = () => {
       video.currentTime = inPoint;
@@ -307,8 +324,8 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
 
   // --- Render ---
 
-  // Not yet extracted placeholder
-  if (!clip.extractedFile) {
+  // Not yet extracted placeholder (only show if no source fallback either)
+  if (!clip.extractedFile && !sourceVideoPath) {
     return (
       <div
         style={{
@@ -365,11 +382,16 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
     );
   }
 
-  const videoSrc = resolveExtractedUrl(clip.extractedFile);
+  const videoSrc = clip.extractedFile
+    ? resolveExtractedUrl(clip.extractedFile)
+    : sourceVideoPath!;
 
   return (
     <div style={{ width: '100%', position: 'relative' }}>
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
+      <div
+        style={{ position: 'relative', width: '100%', aspectRatio: '16/9', cursor: 'pointer' }}
+        onClick={togglePlayPause}
+      >
         <video
           ref={videoRef}
           src={videoSrc}
@@ -398,10 +420,49 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
             pointerEvents: 'none',
           }}
         />
+        {/* Play/pause overlay icon */}
+        {!isPlaying && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: 'rgba(0, 0, 0, 0.6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+              <polygon points="6,4 20,12 6,20" />
+            </svg>
+          </div>
+        )}
       </div>
-      <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-        Space: play/pause &middot; &larr;/&rarr;: prev/next clip &middot; ,/.: frame step
-        {isPlaying ? ' (playing)' : ' (paused)'}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+        <div style={{ fontSize: 12, color: '#888' }}>
+          Space: play/pause &middot; &larr;/&rarr;: prev/next clip &middot; ,/.: frame step
+          {isPlaying ? ' (playing)' : ' (paused)'}
+        </div>
+        <button
+          onClick={() => setOverlayVisible((v) => !v)}
+          style={{
+            fontSize: 11,
+            padding: '2px 8px',
+            borderRadius: 3,
+            border: '1px solid #444',
+            background: overlayVisible ? '#335' : '#222',
+            color: overlayVisible ? '#aaf' : '#888',
+            cursor: 'pointer',
+          }}
+        >
+          {overlayVisible ? 'Hide beats' : 'Show beats'}
+        </button>
       </div>
     </div>
   );

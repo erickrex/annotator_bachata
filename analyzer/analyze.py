@@ -22,8 +22,182 @@ import json
 import os
 import sys
 
-import librosa
 import numpy as np
+from beat_this.inference import File2Beats
+
+
+# ---------------------------------------------------------------------------
+# Lazy singleton for the File2Beats inference model
+# ---------------------------------------------------------------------------
+
+_file2beats: File2Beats | None = None
+
+
+def _get_file2beats() -> File2Beats:
+    """Lazy-initialize the File2Beats inference object.
+
+    Auto-detects GPU availability and falls back to CPU.
+    Uses the 'final0' checkpoint with DBN postprocessing disabled.
+    """
+    global _file2beats
+    if _file2beats is None:
+        import torch
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        _file2beats = File2Beats(checkpoint_path="final0", device=device, dbn=False)
+    return _file2beats
+
+
+# ---------------------------------------------------------------------------
+# Audio validation
+# ---------------------------------------------------------------------------
+
+
+def _validate_audio(wav_path: str) -> None:
+    """Validate that the audio file exists, is long enough, and is not silent.
+
+    Raises:
+        FileNotFoundError: if wav_path doesn't exist
+        ValueError: if audio is too short (< 1 second) or silent
+    """
+    if not os.path.isfile(wav_path):
+        raise FileNotFoundError(f"WAV file not found: {wav_path}")
+
+    from scipy.io import wavfile
+
+    sr, audio = wavfile.read(wav_path)
+
+    # Convert to float32
+    if audio.dtype == np.int16:
+        audio = audio.astype(np.float32) / 32768.0
+    elif audio.dtype == np.int32:
+        audio = audio.astype(np.float32) / 2147483648.0
+    elif audio.dtype != np.float32:
+        audio = audio.astype(np.float32)
+
+    # Mix to mono if stereo
+    if audio.ndim == 2:
+        audio = audio.mean(axis=1)
+
+    duration = len(audio) / sr
+    if duration < 1.0:
+        raise ValueError(
+            f"Audio too short for analysis ({duration:.2f}s). Need at least 1 second."
+        )
+
+    if np.max(np.abs(audio)) < 1e-6:
+        raise ValueError("Audio appears to be silent — no signal detected.")
+
+
+# ---------------------------------------------------------------------------
+# BPM computation (Task 2.2)
+# ---------------------------------------------------------------------------
+
+
+def _compute_bpm(beat_timestamps: np.ndarray) -> tuple[float, float]:
+    """Compute BPM and confidence from beat timestamps.
+
+    Returns (bpm, confidence) where:
+    - bpm = 60 / median(inter-beat intervals), or 0.0 if < 2 beats
+    - confidence = 1 - clamp(cv, 0, 1) where cv is the coefficient of variation
+      of inter-beat intervals. Perfectly regular beats → confidence ≈ 1.0.
+    """
+    if len(beat_timestamps) < 2:
+        return 0.0, 0.0
+
+    ibis = np.diff(beat_timestamps)
+    median_ibi = float(np.median(ibis))
+
+    if median_ibi <= 0:
+        return 0.0, 0.0
+
+    bpm = 60.0 / median_ibi
+
+    # Confidence: based on coefficient of variation of IBIs
+    # Low CV = consistent intervals = high confidence
+    std_ibi = float(np.std(ibis))
+    cv = std_ibi / median_ibi
+    confidence = float(np.clip(1.0 - cv, 0.0, 1.0))
+
+    return bpm, confidence
+
+
+# ---------------------------------------------------------------------------
+# Energy profile computation (Task 2.3)
+# ---------------------------------------------------------------------------
+
+
+def _compute_energy_profile(
+    wav_path: str, sr: int = 22050, hop_length: int = 512
+) -> list[float]:
+    """Compute RMS energy profile using scipy for audio loading and numpy for RMS.
+
+    Matches librosa's default behavior: sr=22050, hop_length=512, frame_length=2048.
+    """
+    from scipy.io import wavfile
+    from scipy.signal import resample
+
+    file_sr, audio = wavfile.read(wav_path)
+
+    # Convert to float32
+    if audio.dtype == np.int16:
+        audio = audio.astype(np.float32) / 32768.0
+    elif audio.dtype == np.int32:
+        audio = audio.astype(np.float32) / 2147483648.0
+    elif audio.dtype != np.float32:
+        audio = audio.astype(np.float32)
+
+    # Mix to mono if stereo
+    if audio.ndim == 2:
+        audio = audio.mean(axis=1)
+
+    # Resample to target sr if needed
+    if file_sr != sr:
+        num_samples = int(len(audio) * sr / file_sr)
+        audio = resample(audio, num_samples).astype(np.float32)
+
+    # Compute RMS with windowed frames (matching librosa defaults)
+    frame_length = 2048
+    # Pad audio to ensure we get frames for the full duration (center padding)
+    pad_length = frame_length // 2
+    audio_padded = np.pad(audio, (pad_length, pad_length), mode="reflect")
+
+    num_frames = 1 + (len(audio_padded) - frame_length) // hop_length
+    energy = np.zeros(num_frames, dtype=np.float32)
+
+    for i in range(num_frames):
+        start = i * hop_length
+        frame = audio_padded[start : start + frame_length]
+        energy[i] = np.sqrt(np.mean(frame**2))
+
+    return energy.tolist()
+
+
+# ---------------------------------------------------------------------------
+# Output formatter and main analyze() function (Task 2.4)
+# ---------------------------------------------------------------------------
+
+
+def _format_output(
+    bpm: float,
+    confidence: float,
+    downbeat_offset: float,
+    beat_timestamps: np.ndarray,
+    fps: float,
+    energy_profile: list[float],
+) -> dict:
+    """Format analysis results into the output contract."""
+    timestamps_list = sorted(float(t) for t in beat_timestamps)
+    frames_list = [round(t * fps) for t in timestamps_list]
+
+    return {
+        "bpm": round(bpm, 2),
+        "bpm_confidence": round(confidence, 4),
+        "downbeat_offset_seconds": round(downbeat_offset, 6),
+        "beat_timestamps": [round(t, 6) for t in timestamps_list],
+        "beat_frames": frames_list,
+        "energy_profile": [round(e, 6) for e in energy_profile],
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,169 +219,35 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _compute_bpm_confidence(y: np.ndarray, sr: int, tempo: float) -> float:
-    """Compute a confidence score (0.0–1.0) for the detected BPM.
-
-    Uses the onset strength autocorrelation to measure how strong the
-    detected tempo peak is relative to the overall autocorrelation energy.
-    A strong, clear peak indicates high confidence.
-    """
-    onset_env = librosa.onset.onset_strength(y=y, sr=sr)
-    # Autocorrelation of onset envelope
-    ac = librosa.autocorrelate(onset_env, max_size=len(onset_env))
-    if ac.max() == 0:
-        return 0.0
-
-    # Normalize autocorrelation
-    ac = ac / ac[0] if ac[0] > 0 else ac
-
-    # Find the lag corresponding to the detected tempo
-    # tempo in BPM -> period in seconds -> period in onset frames
-    hop_length = 512  # librosa default
-    period_seconds = 60.0 / tempo
-    period_frames = period_seconds * sr / hop_length
-
-    lag = int(round(period_frames))
-    if lag <= 0 or lag >= len(ac):
-        return 0.0
-
-    # The autocorrelation value at the tempo lag is our raw confidence
-    raw_confidence = float(ac[lag])
-
-    # Clamp to [0, 1]
-    return float(np.clip(raw_confidence, 0.0, 1.0))
-
-
-def _identify_downbeat(
-    y: np.ndarray, sr: int, beat_frames_lib: np.ndarray
-) -> int:
-    """Identify the downbeat (count 1) index by analyzing RMS accent patterns.
-
-    In bachata, count 1 typically has stronger energy than count 5.
-    We look at groups of 8 beats and find the offset where the accent
-    pattern best matches the expected bachata pattern (strong on 1, weaker on 5).
-
-    Returns the index into beat_frames_lib of the first detected downbeat.
-    """
-    if len(beat_frames_lib) < 8:
-        return 0
-
-    # Get RMS energy at each beat position
-    rms = librosa.feature.rms(y=y, hop_length=512)[0]
-    beat_energies = []
-    for bf in beat_frames_lib:
-        if bf < len(rms):
-            beat_energies.append(float(rms[bf]))
-        else:
-            beat_energies.append(0.0)
-
-    beat_energies = np.array(beat_energies)
-    if beat_energies.max() == 0:
-        return 0
-
-    # Try each possible offset (0-7) as the downbeat position
-    # For each offset, compute how well the accent pattern matches bachata
-    # In bachata 8-count: 1-2-3-tap-5-6-7-tap
-    # Count 1 (index 0 in cycle) should be strongest
-    # Count 5 (index 4 in cycle) should be second strongest but weaker than 1
-    best_offset = 0
-    best_score = -float("inf")
-
-    num_beats = len(beat_energies)
-    for offset in range(min(8, num_beats)):
-        score = 0.0
-        count = 0
-        # Evaluate full 8-count cycles starting from this offset
-        for start in range(offset, num_beats - 7, 8):
-            cycle = beat_energies[start : start + 8]
-            if len(cycle) < 8:
-                break
-            # Score: count 1 energy minus count 5 energy
-            # Higher score means count 1 is more accented than count 5
-            score += cycle[0] - cycle[4]
-            count += 1
-
-        if count > 0:
-            avg_score = score / count
-            if avg_score > best_score:
-                best_score = avg_score
-                best_offset = offset
-
-    return best_offset
-
-
 def analyze(wav_path: str, fps: float) -> dict:
-    """Run librosa analysis on the given WAV file.
+    """Run beat_this analysis on the given WAV file.
 
     Returns a dict matching the JSON output contract:
       bpm, bpm_confidence, downbeat_offset_seconds,
       beat_timestamps, beat_frames, energy_profile
     """
-    # Validate file exists
-    if not os.path.isfile(wav_path):
-        raise FileNotFoundError(f"WAV file not found: {wav_path}")
+    # 1. Validate audio
+    _validate_audio(wav_path)
 
-    # Load audio at standard sample rate
+    # 2. Run beat_this inference
     try:
-        y, sr = librosa.load(wav_path, sr=22050)
+        f2b = _get_file2beats()
     except Exception as exc:
-        raise RuntimeError(f"Failed to load audio file: {exc}") from exc
+        raise RuntimeError(f"Failed to load beat_this model: {exc}") from exc
 
-    # Check for very short or silent audio
-    duration = librosa.get_duration(y=y, sr=sr)
-    if duration < 0.5:
-        raise ValueError(
-            f"Audio too short for analysis ({duration:.2f}s). "
-            "Need at least 0.5 seconds."
-        )
+    beats, downbeats = f2b(wav_path)
 
-    if np.max(np.abs(y)) < 1e-6:
-        raise ValueError("Audio appears to be silent — no signal detected.")
+    # 3. Compute BPM and confidence
+    bpm, confidence = _compute_bpm(beats)
 
-    # Detect BPM and beat frames
-    tempo, beat_frames_lib = librosa.beat.beat_track(y=y, sr=sr)
+    # 4. Determine downbeat offset
+    downbeat_offset = float(downbeats[0]) if len(downbeats) > 0 else 0.0
 
-    # librosa >= 0.10 returns tempo as an ndarray
-    if isinstance(tempo, np.ndarray):
-        tempo = float(tempo[0]) if tempo.size > 0 else 0.0
-    else:
-        tempo = float(tempo)
+    # 5. Compute energy profile
+    energy_profile = _compute_energy_profile(wav_path)
 
-    # Convert beat frames to timestamps
-    beat_timestamps = librosa.frames_to_time(beat_frames_lib, sr=sr).tolist()
-
-    # Handle edge case: no beats detected
-    if len(beat_timestamps) == 0:
-        return {
-            "bpm": round(tempo, 2),
-            "bpm_confidence": 0.0,
-            "downbeat_offset_seconds": 0.0,
-            "beat_timestamps": [],
-            "beat_frames": [],
-            "energy_profile": librosa.feature.rms(y=y)[0].tolist(),
-        }
-
-    # Identify downbeat position
-    downbeat_index = _identify_downbeat(y, sr, beat_frames_lib)
-    downbeat_offset_seconds = beat_timestamps[downbeat_index]
-
-    # Compute BPM confidence
-    bpm_confidence = _compute_bpm_confidence(y, sr, tempo)
-
-    # Extract RMS energy profile
-    energy_profile = librosa.feature.rms(y=y)[0].tolist()
-
-    # Convert beat timestamps to video frame numbers
-    beat_frames_video = [round(ts * fps) for ts in beat_timestamps]
-
-    return {
-        "bpm": round(tempo, 2),
-        "bpm_confidence": round(bpm_confidence, 4),
-        "downbeat_offset_seconds": round(downbeat_offset_seconds, 6),
-        "beat_timestamps": [round(ts, 6) for ts in beat_timestamps],
-        "beat_frames": beat_frames_video,
-        "energy_profile": [round(e, 6) for e in energy_profile],
-    }
+    # 6. Format and return
+    return _format_output(bpm, confidence, downbeat_offset, beats, fps, energy_profile)
 
 
 def main() -> None:

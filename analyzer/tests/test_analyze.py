@@ -10,7 +10,7 @@ import wave
 import numpy as np
 import pytest
 
-from analyzer.analyze import analyze, _compute_bpm_confidence, _identify_downbeat
+from analyzer.analyze import analyze
 
 
 # --- Helpers ---
@@ -145,9 +145,13 @@ class TestEdgeCases:
         # Same timestamps, different frame numbers
         assert result_30["beat_timestamps"] == result_60["beat_timestamps"]
         # 60fps frames should be roughly 2x the 30fps frames
-        if result_30["beat_frames"] and result_60["beat_frames"]:
-            ratio = result_60["beat_frames"][0] / max(result_30["beat_frames"][0], 1)
-            assert 1.5 < ratio < 2.5
+        # Use second beat to avoid division issues when first beat is at t=0
+        if len(result_30["beat_frames"]) > 1 and len(result_60["beat_frames"]) > 1:
+            frame_30 = result_30["beat_frames"][1]
+            frame_60 = result_60["beat_frames"][1]
+            if frame_30 > 0:
+                ratio = frame_60 / frame_30
+                assert 1.5 < ratio < 2.5
 
 
 # --- Tests for CLI interface ---
