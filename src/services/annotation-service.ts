@@ -4,6 +4,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { validateClip } from './schema-validator.js';
+import { REQUIRED_FIELDS } from './required-fields.js';
 import { DEFAULT_ENUM_DEFINITIONS } from '../types/enums.js';
 import type {
   AnnotationProjectFile,
@@ -14,21 +15,9 @@ import type {
 } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
-// Required fields — reduced to 10 dot-paths for completeness scoring
+// Required fields — shared 10 dot-paths for completeness scoring
+// (see ./required-fields.ts for the single source of truth)
 // ---------------------------------------------------------------------------
-
-const REQUIRED_FIELDS: string[] = [
-  'clip_id',
-  'source_id',
-  'status',
-  'remotion.from_frame',
-  'remotion.duration_in_frames',
-  'remotion.fps',
-  'move_name',
-  'difficulty',
-  'style',
-  'tags',
-];
 
 /** Total required fields for completeness calculation. */
 export const TOTAL_REQUIRED_FIELDS = REQUIRED_FIELDS.length; // 10
@@ -136,7 +125,7 @@ export class AnnotationServiceImpl {
     const merged = deepMerge(
       existing as unknown as Record<string, unknown>,
       fields as unknown as Record<string, unknown>,
-    ) as ClipAnnotation;
+    ) as unknown as ClipAnnotation;
 
     // Auto-populate computed fields
     this.autoPopulate(merged);

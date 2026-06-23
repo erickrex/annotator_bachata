@@ -8,23 +8,12 @@
 import type { ClipAnnotation, ValidationError } from '../types/index.js';
 import type { EnumDefinitions } from '../types/enums.js';
 import { DEFAULT_ENUM_DEFINITIONS, CLIP_STATUS_VALUES } from '../types/enums.js';
+import { REQUIRED_FIELDS } from './required-fields.js';
 
 // ---------------------------------------------------------------------------
-// Required fields — 10 dot-paths (reduced set per Requirements 4.1, 4.2, 4.3)
+// Required fields — shared 10 dot-paths (reduced set per Requirements 4.1,
+// 4.2, 4.3); see ./required-fields.ts for the single source of truth.
 // ---------------------------------------------------------------------------
-
-const REQUIRED_FIELDS: string[] = [
-  'clip_id',
-  'source_id',
-  'status',
-  'remotion.from_frame',
-  'remotion.duration_in_frames',
-  'remotion.fps',
-  'move_name',
-  'difficulty',
-  'style',
-  'tags',
-];
 
 // ---------------------------------------------------------------------------
 // Enum field → EnumDefinitions key mapping (only for required fields)

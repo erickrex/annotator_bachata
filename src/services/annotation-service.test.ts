@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { AnnotationServiceImpl, createAnnotationService, TOTAL_REQUIRED_FIELDS } from './annotation-service.js';
 import type { AnnotationProjectFile, ClipAnnotation, SourceRecord } from '../types/index.js';
 
@@ -110,7 +110,7 @@ describe('getAnnotation', () => {
 describe('updateAnnotation', () => {
   it('creates annotation from scratch when none exists', () => {
     const svc = createAnnotationService();
-    const result = svc.updateAnnotation('new_clip', {
+    svc.updateAnnotation('new_clip', {
       clip_id: 'new_clip',
       source_id: 'src1',
       remotion: { from_frame: 0, duration_in_frames: 240, fps: 30 },
@@ -181,7 +181,7 @@ describe('auto-population', () => {
       remotion: { from_frame: 0, duration_in_frames: 600, fps: 30 },
     } as Partial<ClipAnnotation>);
     const ann = svc.getAnnotation('clip1')!;
-    expect(ann.bars_total).toBe(ann.beats_total / 4);
+    expect(ann.bars_total).toBe(ann.beats_total! / 4);
   });
 
   it('auto-populates estimated_tempo_bpm from source when not set', () => {
@@ -227,7 +227,7 @@ describe('status transition prevention', () => {
       remotion: { from_frame: 0, duration_in_frames: 300, fps: 30 },
     } as Partial<ClipAnnotation>);
     // Try to set status to annotated
-    const result = svc.updateAnnotation('clip1', { status: 'annotated' });
+    svc.updateAnnotation('clip1', { status: 'annotated' });
     const ann = svc.getAnnotation('clip1')!;
     expect(ann.status).not.toBe('annotated');
   });
