@@ -4,10 +4,10 @@
  * each side) so boundary adjustments can be made without re-extraction.
  */
 
-import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { VirtualClipDef } from '../types/index.js';
+import { runProcess } from './process-utils.js';
 
 /** Default handle duration in seconds added before and after each clip. */
 export const DEFAULT_HANDLE_SECONDS = 1.0;
@@ -97,73 +97,63 @@ export async function* extractAllClips(
  * Run ffmpeg to extract a segment with re-encoding for keyframe-accurate start.
  * Uses -ss before -i for fast seeking, then re-encodes a short segment.
  */
-function runFfmpeg(
+async function runFfmpeg(
   videoPath: string,
   audioPath: string | undefined,
   startSeconds: number,
   durationSeconds: number,
   outputPath: string,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const args: string[] = [
-      '-y',
-      '-ss', startSeconds.toFixed(4),
-      '-i', videoPath,
-    ];
+  const args: string[] = [
+    '-y',
+    '-ss', startSeconds.toFixed(4),
+    '-i', videoPath,
+  ];
 
-    // If separate audio, add it as a second input
-    if (audioPath) {
-      args.push('-ss', startSeconds.toFixed(4), '-i', audioPath);
+  // If separate audio, add it as a second input
+  if (audioPath) {
+    args.push('-ss', startSeconds.toFixed(4), '-i', audioPath);
+  }
+
+  args.push(
+    '-t', durationSeconds.toFixed(4),
+    '-c:v', 'libx264',
+    '-preset', 'fast',
+    '-crf', '18',
+    '-pix_fmt', 'yuv420p',
+    // Force keyframe at the very start
+    '-force_key_frames', '0',
+    '-movflags', '+faststart',
+  );
+
+  if (audioPath) {
+    // Map video from first input, audio from second input
+    args.push('-map', '0:v:0', '-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k');
+  } else {
+    // Use audio from the video file
+    args.push('-c:a', 'aac', '-b:a', '192k');
+  }
+
+  args.push(outputPath);
+
+  let stderr: string;
+  let code: number | null;
+  try {
+    ({ stderr, code } = await runProcess('ffmpeg', args, {
+      timeoutMs: FFMPEG_TIMEOUT_MS,
+      timeoutMessage: `ffmpeg timed out extracting clip to ${outputPath}`,
+    }));
+  } catch (err) {
+    const message = (err as Error).message;
+    // The timeout rejection already carries the exact desired message; re-throw as-is.
+    // Only spawn errors get the caller-specific "failed to start" prefix.
+    if (message.startsWith('ffmpeg timed out')) {
+      throw err;
     }
+    throw new Error(`ffmpeg failed to start: ${message}`);
+  }
 
-    args.push(
-      '-t', durationSeconds.toFixed(4),
-      '-c:v', 'libx264',
-      '-preset', 'fast',
-      '-crf', '18',
-      '-pix_fmt', 'yuv420p',
-      // Force keyframe at the very start
-      '-force_key_frames', '0',
-      '-movflags', '+faststart',
-    );
-
-    if (audioPath) {
-      // Map video from first input, audio from second input
-      args.push('-map', '0:v:0', '-map', '1:a:0', '-c:a', 'aac', '-b:a', '192k');
-    } else {
-      // Use audio from the video file
-      args.push('-c:a', 'aac', '-b:a', '192k');
-    }
-
-    args.push(outputPath);
-
-    const proc = spawn('ffmpeg', args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let stderr = '';
-
-    const timer = setTimeout(() => {
-      proc.kill('SIGKILL');
-      reject(new Error(`ffmpeg timed out extracting clip to ${outputPath}`));
-    }, FFMPEG_TIMEOUT_MS);
-
-    proc.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
-    });
-
-    proc.on('error', (err) => {
-      clearTimeout(timer);
-      reject(new Error(`ffmpeg failed to start: ${err.message}`));
-    });
-
-    proc.on('close', (code) => {
-      clearTimeout(timer);
-      if (code !== 0) {
-        reject(new Error(`ffmpeg exited with code ${code}: ${stderr.slice(-500)}`));
-      } else {
-        resolve();
-      }
-    });
-  });
+  if (code !== 0) {
+    throw new Error(`ffmpeg exited with code ${code}: ${stderr.slice(-500)}`);
+  }
 }

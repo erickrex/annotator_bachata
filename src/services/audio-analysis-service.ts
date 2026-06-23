@@ -1,8 +1,6 @@
 /**
- * Audio Analysis Service — invokes the Python librosa analyzer CLI as a subprocess
+ * Audio Analysis Service — invokes the Python beat_this analyzer CLI as a subprocess
  * and parses its JSON output into an AudioAnalysisResult.
- *
- * Requirements: 2.1, 2.10, 2.11, 16.6
  */
 
 import { spawn } from 'node:child_process';
@@ -22,7 +20,7 @@ interface PythonAnalyzerOutput {
 }
 
 /**
- * Run the Python librosa analyzer on a WAV file and return structured results.
+ * Run the Python beat_this analyzer on a WAV file and return structured results.
  *
  * Spawns `uv run python -m analyzer.analyze <wavPath> --fps <fps>`, captures
  * stdout JSON, and maps snake_case keys to the camelCase AudioAnalysisResult.

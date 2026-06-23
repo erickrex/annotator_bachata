@@ -11,6 +11,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ChildProcess } from 'node:child_process';
+import type { Readable } from 'node:stream';
 import { EventEmitter } from 'node:events';
 
 // ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ describe('AudioAnalysisService – analyze()', () => {
   });
 
   it('spawns uv with correct arguments', () => {
-    const _promise = analyze('/tmp/song.wav', 30);
+    analyze('/tmp/song.wav', 30);
 
     expect(spawn).toHaveBeenCalledWith('uv', [
       'run', 'python', '-m', 'analyzer.analyze',

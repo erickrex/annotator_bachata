@@ -1,29 +1,27 @@
 /**
  * Integration tests for subprocess pipelines.
  *
- * These tests verify that the external tool integrations (uv-run yt-dlp, Python/librosa,
- * Remotion) are correctly wired up. They are skipped by default because they
- * require external dependencies to be installed:
+ * These tests verify that the external tool integrations (uv-run yt-dlp and the
+ * Python beat_this analyzer) are correctly wired up. They are skipped by default
+ * because they require external dependencies to be installed:
  *
  *   - uv: runs `yt-dlp` and the Python analyzer from pyproject.toml / uv.lock
- *   - Python (via uv): librosa analyzer
- *   - ffmpeg: Media processing (used by Remotion renderer)
- *   - @remotion/renderer: Remotion rendering package
+ *   - Python (via uv): beat_this analyzer
+ *   - ffmpeg: Media processing (audio extraction / clip trimming)
  *
  * To run these tests, set the environment variable:
  *   INTEGRATION=1 npx vitest run src/tests/integration/
  *
  * The tests are designed to be fast and offline:
  *   - yt-dlp: only checks `uv run yt-dlp --version`, no actual downloads
- *   - librosa: creates a small WAV programmatically and runs the analyzer
- *   - Remotion: only verifies the renderMedia import resolves
+ *   - beat_this: creates a small WAV programmatically and runs the analyzer
  *
- * Validates: Requirements 1.1, 2.1, 12.1
+ * Validates: Requirements 1.1, 2.1
  */
 
 import { describe, it, expect } from 'vitest';
 import { spawn, execFileSync } from 'node:child_process';
-import { writeFileSync, unlinkSync, mkdirSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -45,7 +43,7 @@ function binaryExists(name: string): boolean {
 
 // ---------------------------------------------------------------------------
 // Helper: create a WAV file with a rhythmic pulse pattern (~3 seconds)
-// This generates a click track at ~120 BPM so librosa can detect beats.
+// This generates a click track at ~120 BPM so beat_this can detect beats.
 // ---------------------------------------------------------------------------
 function createTestWav(filePath: string): void {
   const sampleRate = 22050;
@@ -147,13 +145,13 @@ describeIntegration('Subprocess Pipeline Integration Tests', () => {
   });
 
   // -------------------------------------------------------------------------
-  // 2. librosa subprocess — create a WAV and run the Python analyzer
+  // 2. beat_this subprocess — create a WAV and run the Python analyzer
   //    Validates: Requirement 2.1
   //    Skipped if uv is not installed on the system.
   // -------------------------------------------------------------------------
-  const describeLibrosa = hasUv ? describe : describe.skip;
+  const describeBeatThis = hasUv ? describe : describe.skip;
 
-  describeLibrosa('librosa analyzer subprocess', () => {
+  describeBeatThis('beat_this analyzer subprocess', () => {
     const testDir = join(tmpdir(), `clip-slicer-test-${Date.now()}`);
     const wavPath = join(testDir, 'test-tone.wav');
 
@@ -241,27 +239,5 @@ describeIntegration('Subprocess Pipeline Integration Tests', () => {
       expect(result.code).not.toBe(0);
       expect(result.stderr).toContain('Error');
     }, 30_000);
-  });
-
-  // -------------------------------------------------------------------------
-  // 3. Remotion renderMedia — verify the import resolves
-  //    Validates: Requirement 12.1
-  // -------------------------------------------------------------------------
-  describe('Remotion renderer', () => {
-    it('should be able to import @remotion/renderer with renderMedia', async () => {
-      // Dynamic import to match how export-service.ts uses it
-      const renderer = await import('@remotion/renderer');
-
-      expect(renderer).toBeDefined();
-      expect(typeof renderer.renderMedia).toBe('function');
-    });
-
-    it('should be able to import the Remotion composition entry point', async () => {
-      const remotionIndex = await import('../../remotion/index.js');
-
-      expect(remotionIndex).toBeDefined();
-      expect(remotionIndex.Root).toBeDefined();
-      expect(remotionIndex.VirtualClip).toBeDefined();
-    });
   });
 });

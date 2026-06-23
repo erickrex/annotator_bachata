@@ -1,8 +1,6 @@
 /**
  * Ingestion Service — downloads YouTube videos via yt-dlp (run with `uv` from pyproject.toml)
  * and extracts metadata via ffprobe.
- *
- * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 15.1, 16.7
  */
 
 import { spawn } from 'node:child_process';
@@ -10,6 +8,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { DownloadProgress, SourceMetadata } from '../types/index.js';
 import { validateUrl } from './url-validator.js';
+import { runProcess } from './process-utils.js';
 
 /** Project root for `uv run` so pyproject.toml / uv.lock resolve (matches app-state projectDir). */
 function projectRoot(): string {
@@ -42,6 +41,26 @@ const YTDLP_METADATA_TIMEOUT_MS = 120 * 1000;
 const PROGRESS_RE =
   /\[download\]\s+([\d.]+)%\s+of\s+~?[\d.]+\S*\s+at\s+(\S+)\s+ETA\s+(\S+)/;
 
+/**
+ * Classify a yt-dlp failure message into a user-facing Error.
+ *
+ * Shared by the metadata fetch and download paths so both surface identical
+ * messages for age-restricted / private / unavailable videos. The fallback
+ * message is parameterized via `fallbackLabel` ('metadata' or 'download') so
+ * each caller keeps its original wording.
+ */
+function classifyYtDlpError(message: string, code: number | null, fallbackLabel: string): Error {
+  if (message.includes('age-restricted') || message.includes('Sign in to confirm your age')) {
+    return new Error(`Video is age-restricted and cannot be downloaded: ${message}`);
+  } else if (message.includes('Private video') || message.includes('private video')) {
+    return new Error(`Video is private and cannot be accessed: ${message}`);
+  } else if (message.includes('Video unavailable') || message.includes('not available')) {
+    return new Error(`Video is unavailable: ${message}`);
+  } else {
+    return new Error(`yt-dlp ${fallbackLabel} failed (exit ${code}): ${message}`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // ffprobe helpers
 // ---------------------------------------------------------------------------
@@ -65,96 +84,99 @@ interface YtDlpInfo {
  */
 async function ffprobe(videoPath: string): Promise<FfprobeResult> {
   console.log(`[ingest] ffprobe: starting for ${videoPath}`);
-  return new Promise<FfprobeResult>((resolve, reject) => {
-    const proc = spawn('ffprobe', [
-      '-v', 'quiet',
-      '-print_format', 'json',
-      '-show_format',
-      '-show_streams',
-      videoPath,
-    ]);
 
-    let stdout = '';
-    let stderr = '';
-
-    const timer = setTimeout(() => {
-      proc.kill('SIGKILL');
+  let stdout: string;
+  let stderr: string;
+  let code: number | null;
+  try {
+    ({ stdout, stderr, code } = await runProcess(
+      'ffprobe',
+      [
+        '-v', 'quiet',
+        '-print_format', 'json',
+        '-show_format',
+        '-show_streams',
+        videoPath,
+      ],
+      {
+        timeoutMs: FFPROBE_TIMEOUT_MS,
+        timeoutMessage: 'ffprobe timed out',
+      },
+    ));
+  } catch (err) {
+    const message = (err as Error).message;
+    // The timeout rejection already carries the exact desired message; re-throw
+    // as-is. Only spawn errors get the caller-specific "failed to start" prefix.
+    if (message === 'ffprobe timed out') {
       console.error('[ingest] ffprobe: timed out');
-      reject(new Error('ffprobe timed out'));
-    }, FFPROBE_TIMEOUT_MS);
+      throw err;
+    }
+    console.error(`[ingest] ffprobe: failed to start — ${message}`);
+    throw new Error(`ffprobe failed to start: ${message}`);
+  }
 
-    proc.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
-    proc.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
+  console.log(`[ingest] ffprobe: exited with code ${code}`);
+  if (code !== 0) {
+    throw new Error(`ffprobe exited with code ${code}: ${stderr.trim()}`);
+  }
 
-    proc.on('error', (err) => {
-      clearTimeout(timer);
-      console.error(`[ingest] ffprobe: failed to start — ${err.message}`);
-      reject(new Error(`ffprobe failed to start: ${err.message}`));
-    });
+  try {
+    const data = JSON.parse(stdout) as {
+      streams?: Array<{
+        codec_type?: string;
+        width?: number;
+        height?: number;
+        r_frame_rate?: string;
+        nb_frames?: string;
+        duration?: string;
+      }>;
+      format?: { duration?: string };
+    };
 
-    proc.on('close', (code) => {
-      clearTimeout(timer);
-      console.log(`[ingest] ffprobe: exited with code ${code}`);
-      if (code !== 0) {
-        reject(new Error(`ffprobe exited with code ${code}: ${stderr.trim()}`));
-        return;
+    const videoStream = data.streams?.find((s) => s.codec_type === 'video');
+    if (!videoStream) {
+      throw new Error('No video stream found in ffprobe output');
+    }
+
+    // Parse frame rate from "30000/1001" or "30/1" format
+    let fps = 30;
+    if (videoStream.r_frame_rate) {
+      const parts = videoStream.r_frame_rate.split('/');
+      if (parts.length === 2) {
+        const num = Number(parts[0]);
+        const den = Number(parts[1]);
+        if (den > 0) fps = num / den;
+      } else {
+        const parsed = Number(videoStream.r_frame_rate);
+        if (!Number.isNaN(parsed) && parsed > 0) fps = parsed;
       }
+    }
 
-      try {
-        const data = JSON.parse(stdout) as {
-          streams?: Array<{
-            codec_type?: string;
-            width?: number;
-            height?: number;
-            r_frame_rate?: string;
-            nb_frames?: string;
-            duration?: string;
-          }>;
-          format?: { duration?: string };
-        };
+    const width = videoStream.width ?? 0;
+    const height = videoStream.height ?? 0;
 
-        const videoStream = data.streams?.find((s) => s.codec_type === 'video');
-        if (!videoStream) {
-          reject(new Error('No video stream found in ffprobe output'));
-          return;
-        }
+    // Duration: prefer format-level, fall back to stream-level
+    const durationStr = data.format?.duration ?? videoStream.duration ?? '0';
+    const durationSeconds = Number.parseFloat(durationStr) || 0;
 
-        // Parse frame rate from "30000/1001" or "30/1" format
-        let fps = 30;
-        if (videoStream.r_frame_rate) {
-          const parts = videoStream.r_frame_rate.split('/');
-          if (parts.length === 2) {
-            const num = Number(parts[0]);
-            const den = Number(parts[1]);
-            if (den > 0) fps = num / den;
-          } else {
-            const parsed = Number(videoStream.r_frame_rate);
-            if (!Number.isNaN(parsed) && parsed > 0) fps = parsed;
-          }
-        }
+    // Total frames: prefer nb_frames, fall back to fps * duration
+    let totalFrames = 0;
+    if (videoStream.nb_frames && videoStream.nb_frames !== 'N/A') {
+      totalFrames = Number.parseInt(videoStream.nb_frames, 10) || 0;
+    }
+    if (totalFrames === 0) {
+      totalFrames = Math.round(fps * durationSeconds);
+    }
 
-        const width = videoStream.width ?? 0;
-        const height = videoStream.height ?? 0;
-
-        // Duration: prefer format-level, fall back to stream-level
-        const durationStr = data.format?.duration ?? videoStream.duration ?? '0';
-        const durationSeconds = Number.parseFloat(durationStr) || 0;
-
-        // Total frames: prefer nb_frames, fall back to fps * duration
-        let totalFrames = 0;
-        if (videoStream.nb_frames && videoStream.nb_frames !== 'N/A') {
-          totalFrames = Number.parseInt(videoStream.nb_frames, 10) || 0;
-        }
-        if (totalFrames === 0) {
-          totalFrames = Math.round(fps * durationSeconds);
-        }
-
-        resolve({ fps: Math.round(fps * 100) / 100, width, height, durationSeconds, totalFrames });
-      } catch (err) {
-        reject(new Error(`Failed to parse ffprobe output: ${(err as Error).message}`));
-      }
-    });
-  });
+    return { fps: Math.round(fps * 100) / 100, width, height, durationSeconds, totalFrames };
+  } catch (err) {
+    // Preserve the original "No video stream found" message verbatim; wrap any
+    // other parse failure the same way the original close handler did.
+    if (err instanceof Error && err.message === 'No video stream found in ffprobe output') {
+      throw err;
+    }
+    throw new Error(`Failed to parse ffprobe output: ${(err as Error).message}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -166,74 +188,70 @@ async function ffprobe(videoPath: string): Promise<FfprobeResult> {
  */
 async function fetchVideoInfo(url: string): Promise<YtDlpInfo> {
   console.log(`[ingest] fetchVideoInfo: starting for ${url}`);
-  return new Promise<YtDlpInfo>((resolve, reject) => {
-    const proc = spawnYtDlp(['--dump-json', '--no-download', '--no-playlist', '--socket-timeout', '30', url]);
 
-    let stdout = '';
-    let stderr = '';
-
-    const timer = setTimeout(() => {
-      proc.kill('SIGKILL');
+  let stdout: string;
+  let stderr: string;
+  let code: number | null;
+  try {
+    ({ stdout, stderr, code } = await runProcess(
+      'uv',
+      ['run', 'yt-dlp', '--dump-json', '--no-download', '--no-playlist', '--socket-timeout', '30', url],
+      {
+        cwd: projectRoot(),
+        env: process.env,
+        timeoutMs: YTDLP_METADATA_TIMEOUT_MS,
+        timeoutMessage: 'yt-dlp metadata fetch timed out',
+      },
+    ));
+  } catch (err) {
+    const message = (err as Error).message;
+    // The timeout rejection already carries the exact desired message; re-throw
+    // as-is. Only spawn errors get the caller-specific "failed to start" prefix.
+    if (message === 'yt-dlp metadata fetch timed out') {
       console.error(`[ingest] fetchVideoInfo: timed out after ${YTDLP_METADATA_TIMEOUT_MS / 1000}s`);
-      reject(new Error('yt-dlp metadata fetch timed out'));
-    }, YTDLP_METADATA_TIMEOUT_MS);
+      throw err;
+    }
+    console.error(`[ingest] fetchVideoInfo: failed to start — ${message}`);
+    throw new Error(`uv run yt-dlp failed to start: ${message}`);
+  }
 
-    proc.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
-    proc.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString();
-      console.log(`[ingest] fetchVideoInfo stderr: ${chunk.toString().trim()}`);
-    });
+  const trimmedStderr = stderr.trim();
+  if (trimmedStderr) {
+    console.log(`[ingest] fetchVideoInfo stderr: ${trimmedStderr}`);
+  }
 
-    proc.on('error', (err) => {
-      clearTimeout(timer);
-      console.error(`[ingest] fetchVideoInfo: failed to start — ${err.message}`);
-      reject(new Error(`uv run yt-dlp failed to start: ${err.message}`));
-    });
+  console.log(`[ingest] fetchVideoInfo: exited with code ${code}`);
+  if (code !== 0) {
+    const msg = stderr.trim();
+    // Detect specific error types for better user messages
+    throw classifyYtDlpError(msg, code, 'metadata');
+  }
 
-    proc.on('close', (code) => {
-      clearTimeout(timer);
-      console.log(`[ingest] fetchVideoInfo: exited with code ${code}`);
-      if (code !== 0) {
-        const msg = stderr.trim();
-        // Detect specific error types for better user messages
-        if (msg.includes('age-restricted') || msg.includes('Sign in to confirm your age')) {
-          reject(new Error(`Video is age-restricted and cannot be downloaded: ${msg}`));
-        } else if (msg.includes('Private video') || msg.includes('private video')) {
-          reject(new Error(`Video is private and cannot be accessed: ${msg}`));
-        } else if (msg.includes('Video unavailable') || msg.includes('not available')) {
-          reject(new Error(`Video is unavailable: ${msg}`));
-        } else {
-          reject(new Error(`yt-dlp metadata failed (exit ${code}): ${msg}`));
-        }
-        return;
-      }
+  try {
+    const info = JSON.parse(stdout) as {
+      title?: string;
+      uploader?: string;
+      channel?: string;
+      upload_date?: string;
+    };
 
-      try {
-        const info = JSON.parse(stdout) as {
-          title?: string;
-          uploader?: string;
-          channel?: string;
-          upload_date?: string;
-        };
+    // upload_date comes as "YYYYMMDD" — convert to ISO-ish "YYYY-MM-DD"
+    let uploadDate = info.upload_date ?? '';
+    if (uploadDate.length === 8) {
+      uploadDate = `${uploadDate.slice(0, 4)}-${uploadDate.slice(4, 6)}-${uploadDate.slice(6, 8)}`;
+    }
 
-        // upload_date comes as "YYYYMMDD" — convert to ISO-ish "YYYY-MM-DD"
-        let uploadDate = info.upload_date ?? '';
-        if (uploadDate.length === 8) {
-          uploadDate = `${uploadDate.slice(0, 4)}-${uploadDate.slice(4, 6)}-${uploadDate.slice(6, 8)}`;
-        }
-
-        resolve({
-          title: info.title ?? 'Unknown',
-          channel: info.channel ?? info.uploader ?? 'Unknown',
-          uploadDate,
-        });
-        console.log(`[ingest] fetchVideoInfo: success — "${info.title}" by ${info.channel ?? info.uploader}`);
-      } catch (err) {
-        console.error(`[ingest] fetchVideoInfo: JSON parse failed — ${(err as Error).message}`);
-        reject(new Error(`Failed to parse yt-dlp JSON: ${(err as Error).message}`));
-      }
-    });
-  });
+    const result: YtDlpInfo = {
+      title: info.title ?? 'Unknown',
+      channel: info.channel ?? info.uploader ?? 'Unknown',
+      uploadDate,
+    };
+    console.log(`[ingest] fetchVideoInfo: success — "${info.title}" by ${info.channel ?? info.uploader}`);
+    return result;
+  } catch (err) {
+    console.error(`[ingest] fetchVideoInfo: JSON parse failed — ${(err as Error).message}`);
+    throw new Error(`Failed to parse yt-dlp JSON: ${(err as Error).message}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -304,15 +322,7 @@ function downloadVideo(
 
       if (code !== 0) {
         const msg = (stderr.trim() || progressLines.join('\n')).trim();
-        if (msg.includes('age-restricted') || msg.includes('Sign in to confirm your age')) {
-          reject(new Error(`Video is age-restricted and cannot be downloaded: ${msg}`));
-        } else if (msg.includes('Private video') || msg.includes('private video')) {
-          reject(new Error(`Video is private and cannot be accessed: ${msg}`));
-        } else if (msg.includes('Video unavailable') || msg.includes('not available')) {
-          reject(new Error(`Video is unavailable: ${msg}`));
-        } else {
-          reject(new Error(`yt-dlp download failed (exit ${code}): ${msg}`));
-        }
+        reject(classifyYtDlpError(msg, code, 'download'));
       } else {
         resolve();
       }
@@ -351,42 +361,37 @@ function downloadVideo(
  */
 async function extractAudio(url: string, outputPath: string): Promise<void> {
   console.log(`[ingest] extractAudio: starting — ${url} → ${outputPath}`);
-  return new Promise<void>((resolve, reject) => {
-    const proc = spawnYtDlp([
-      '-x',
-      '--audio-format', 'wav',
-      '-o', outputPath,
-      url,
-    ]);
 
-    let stderr = '';
-    let stdout = '';
-
-    const timer = setTimeout(() => {
-      proc.kill('SIGKILL');
+  let stdout: string;
+  let stderr: string;
+  let code: number | null;
+  try {
+    ({ stdout, stderr, code } = await runProcess(
+      'uv',
+      ['run', 'yt-dlp', '-x', '--audio-format', 'wav', '-o', outputPath, url],
+      {
+        cwd: projectRoot(),
+        env: process.env,
+        timeoutMs: DOWNLOAD_TIMEOUT_MS,
+        timeoutMessage: 'Audio extraction timed out',
+      },
+    ));
+  } catch (err) {
+    const message = (err as Error).message;
+    // The timeout rejection already carries the exact desired message; re-throw
+    // as-is. Only spawn errors get the caller-specific "failed to start" prefix.
+    if (message === 'Audio extraction timed out') {
       console.error('[ingest] extractAudio: timed out');
-      reject(new Error('Audio extraction timed out'));
-    }, DOWNLOAD_TIMEOUT_MS);
+      throw err;
+    }
+    console.error(`[ingest] extractAudio: failed to start — ${message}`);
+    throw new Error(`uv run yt-dlp audio extraction failed to start: ${message}`);
+  }
 
-    proc.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
-    proc.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
-
-    proc.on('error', (err) => {
-      clearTimeout(timer);
-      console.error(`[ingest] extractAudio: failed to start — ${err.message}`);
-      reject(new Error(`uv run yt-dlp audio extraction failed to start: ${err.message}`));
-    });
-
-    proc.on('close', (code) => {
-      clearTimeout(timer);
-      console.log(`[ingest] extractAudio: exited with code ${code}`);
-      if (code !== 0) {
-        reject(new Error(`yt-dlp audio extraction failed (exit ${code}): ${(stderr || stdout).trim()}`));
-      } else {
-        resolve();
-      }
-    });
-  });
+  console.log(`[ingest] extractAudio: exited with code ${code}`);
+  if (code !== 0) {
+    throw new Error(`yt-dlp audio extraction failed (exit ${code}): ${(stderr || stdout).trim()}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
