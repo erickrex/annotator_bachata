@@ -15,31 +15,6 @@ import type { ClipStatus } from '../../types/enums.js';
 /** Arbitrary ClipStatus from the controlled vocabulary. */
 const clipStatusArb: fc.Arbitrary<ClipStatus> = fc.constantFrom(...CLIP_STATUS_VALUES);
 
-/** Minimal SourceRecord with a unique source_id. */
-function sourceRecordArb(index: number): fc.Arbitrary<SourceRecord> {
-  return fc.record({
-    source_id: fc.constant(`src_${index}`),
-    youtube_url: fc.constant(`https://youtube.com/watch?v=abc${index}`),
-    title: fc.constant(`Source ${index}`),
-    channel: fc.constant('channel'),
-    upload_date: fc.constant('2024-01-01'),
-    duration_seconds: fc.constant(120),
-    fps: fc.constant(30),
-    width: fc.constant(1920),
-    height: fc.constant(1080),
-    total_frames: fc.constant(3600),
-    video_file: fc.constant(`sources/yt_abc${index}.mp4`),
-    audio_file: fc.constant(`sources/yt_abc${index}.wav`),
-    detected_bpm: fc.constant(130),
-    bpm_confidence: fc.constant(0.9),
-    downbeat_offset_seconds: fc.constant(0.1),
-    beat_grid: fc.constant([0.46, 0.92]),
-    beat_grid_frames: fc.constant([14, 28]),
-    energy_profile: fc.constant([0.5, 0.6]),
-    downloaded_at: fc.constant('2024-01-01T00:00:00Z'),
-  });
-}
-
 /** Minimal ClipAnnotation with a given source_id and status. */
 function clipArb(clipIndex: number, sourceId: string, status: ClipStatus): ClipAnnotation {
   return {

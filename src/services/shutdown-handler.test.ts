@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { MockInstance } from 'vitest';
 import { registerShutdownHandlers } from './shutdown-handler.js';
 import type { DebouncedSaver } from './project-service.js';
 
 describe('registerShutdownHandlers', () => {
   let mockSaver: DebouncedSaver;
-  let exitSpy: ReturnType<typeof vi.spyOn>;
-  let stderrSpy: ReturnType<typeof vi.spyOn>;
+  let exitSpy: MockInstance<typeof process.exit>;
+  let stderrSpy: MockInstance<typeof process.stderr.write>;
 
   // Track listeners registered during each test so we can clean them up
   const registeredListeners: Array<{ signal: string; listener: (...args: any[]) => void }> = [];
@@ -19,12 +20,12 @@ describe('registerShutdownHandlers', () => {
       cancel: vi.fn(),
     };
 
-    exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
     stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
 
     // Intercept process.on to track registered listeners for cleanup
     originalOn = process.on.bind(process);
-    const patchedOn = vi.spyOn(process, 'on').mockImplementation((event: any, listener: any) => {
+    vi.spyOn(process, 'on').mockImplementation((event: any, listener: any) => {
       registeredListeners.push({ signal: event, listener });
       return originalOn(event, listener);
     });

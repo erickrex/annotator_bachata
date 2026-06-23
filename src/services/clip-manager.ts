@@ -1,5 +1,4 @@
 // Clip Manager — pure functions for creating, merging, splitting, and adjusting virtual clips.
-// Requirements: 2.2, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 5.7, 5.8, 5.9
 
 import type { CycleHierarchy, Cycle, VirtualClipDef } from '../types/index.js';
 

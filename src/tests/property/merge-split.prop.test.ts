@@ -7,7 +7,6 @@ import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { buildCycles } from '../../services/cycle-builder.js';
 import { createClips, mergeClips, splitClip } from '../../services/clip-manager.js';
-import type { CycleHierarchy } from '../../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Shared generators

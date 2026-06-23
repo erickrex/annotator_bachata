@@ -45,7 +45,6 @@ export const ClipPreviewPlayer: React.FC<ClipPreviewPlayerProps> = ({
 
   // Determine if we're using the extracted file or falling back to source video
   const hasExtracted = Boolean(clip.extractedFile);
-  const hasSource = Boolean(sourceVideoPath);
 
   // Compute the effective in/out points in seconds
   // For extracted clips: relative to the extracted file (which includes handles)

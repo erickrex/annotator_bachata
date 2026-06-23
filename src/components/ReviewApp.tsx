@@ -44,14 +44,14 @@ export const ReviewApp: React.FC = () => {
 
       const data = await res.json();
       const nextClips = Array.isArray(data.clips) ? data.clips as Array<VirtualClipDef & { completeness?: number }> : [];
-      const nextAnnotations = new Map(
+      const nextAnnotations = new Map<string, ClipAnnotation>(
         Array.isArray(data.annotations)
-          ? data.annotations.map((annotation: ClipAnnotation) => [annotation.clip_id, annotation])
+          ? data.annotations.map((annotation: ClipAnnotation): [string, ClipAnnotation] => [annotation.clip_id, annotation])
           : [],
       );
-      const nextSources = new Map(
+      const nextSources = new Map<string, SourceRecord>(
         Array.isArray(data.sources)
-          ? data.sources.map((source: SourceRecord) => [source.source_id, source])
+          ? data.sources.map((source: SourceRecord): [string, SourceRecord] => [source.source_id, source])
           : [],
       );
       const nextCompletenessMap = new Map(
@@ -364,7 +364,6 @@ export const ReviewApp: React.FC = () => {
             >
               <ClipGrid
                 clips={group.clips}
-                annotations={annotations}
                 completenessMap={completenessMap}
                 selectedClipId={selectedClipId}
                 onSelectClip={handleSelectClip}

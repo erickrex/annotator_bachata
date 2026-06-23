@@ -25,13 +25,11 @@ const difficultyArb = fc.constantFrom(
   'beginner' as const,
   'intermediate' as const,
   'advanced' as const,
-  'expert' as const,
 );
 
 const styleArb = fc.constantFrom(
   'sensual' as const,
   'moderna' as const,
-  'dominicana' as const,
   'traditional' as const,
   'fusion' as const,
 );
@@ -82,7 +80,7 @@ const clipAnnotationPairArb = fc
     const clip: VirtualClipDef = {
       clipId,
       sourceId,
-      status: 'draft' as const,
+      status: 'pending' as const,
       remotion: { fromFrame, durationInFrames, fps },
       beatMarkerFrames: [],
       cycleNumber: 1,
@@ -96,7 +94,7 @@ const clipAnnotationPairArb = fc
     const annotation: ClipAnnotation = {
       clip_id: clipId,
       source_id: sourceId,
-      status: 'draft' as const,
+      status: 'pending' as const,
       remotion: {
         from_frame: fromFrame,
         duration_in_frames: durationInFrames,

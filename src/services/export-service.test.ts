@@ -141,7 +141,7 @@ describe('export-service', () => {
       const annotation = makeAnnotation({
         move_name: 'Cross Body Lead',
         difficulty: 'intermediate',
-        style: 'dominicana',
+        style: 'traditional',
         tags: ['turn', 'lead', 'cross-body'],
       });
 
@@ -159,7 +159,7 @@ describe('export-service', () => {
         source_id: 'src1',
         move_name: 'Cross Body Lead',
         difficulty: 'intermediate',
-        style: 'dominicana',
+        style: 'traditional',
         tags: ['turn', 'lead', 'cross-body'],
         duration_seconds: 3,
         trim: {

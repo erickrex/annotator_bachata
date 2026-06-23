@@ -2,26 +2,10 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { act } from 'react';
 import { ClipPreviewPlayer, type ClipPreviewPlayerProps } from './ClipPreviewPlayer.js';
 import type { VirtualClipDef } from '../types/index.js';
-
-// Mock HTMLVideoElement methods not supported in jsdom
-function mockVideoElement(container: HTMLElement) {
-  const video = container.querySelector('video');
-  if (!video) return null;
-
-  // jsdom doesn't support video playback, so we mock these
-  Object.defineProperty(video, 'paused', { value: true, writable: true, configurable: true });
-  video.play = vi.fn().mockResolvedValue(undefined);
-  video.pause = vi.fn();
-  video.load = vi.fn();
-  Object.defineProperty(video, 'currentTime', { value: 0, writable: true, configurable: true });
-
-  return video;
-}
 
 function makeClip(overrides: Partial<VirtualClipDef> = {}): VirtualClipDef {
   return {

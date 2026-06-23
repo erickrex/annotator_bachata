@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createClips, mergeClips, splitClip } from './clip-manager.js';
-import type { CycleHierarchy, Cycle, VirtualClipDef } from '../types/index.js';
+import type { CycleHierarchy, Cycle } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -207,7 +207,7 @@ describe('splitClip', () => {
     const hierarchy = makeCycles(4);
     const clips = createClips('src1', hierarchy, 16, 30);
     // Cycle 2 starts at frame 80. Passing 85 should still snap to cycle 2 boundary.
-    const [a, b] = splitClip(clips[0], 85, hierarchy);
+    const [, b] = splitClip(clips[0], 85, hierarchy);
 
     expect(b.remotion.fromFrame).toBe(80);
   });

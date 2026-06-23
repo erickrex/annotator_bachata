@@ -3,7 +3,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import { resetAppState, getAppState, upsertClip, getFullProjectState } from '../../services/app-state.js';
+import { resetAppState, upsertClip, getFullProjectState } from '../../services/app-state.js';
 import type { VirtualClipDef } from '../../types/index.js';
 
 // ---------------------------------------------------------------------------

@@ -1,11 +1,10 @@
 import React from 'react';
-import type { ClipAnnotation, VirtualClipDef } from '../types/index.js';
+import type { VirtualClipDef } from '../types/index.js';
 import { ClipCard } from './ClipCard.js';
 import { ClipControls } from './ClipControls.js';
 
 export interface ClipGridProps {
   clips: VirtualClipDef[];
-  annotations: Map<string, ClipAnnotation>;
   completenessMap: Map<string, number>;
   selectedClipId: string | null;
   onSelectClip: (clipId: string) => void;
@@ -17,7 +16,6 @@ export interface ClipGridProps {
 
 export const ClipGrid: React.FC<ClipGridProps> = ({
   clips,
-  annotations,
   completenessMap,
   selectedClipId,
   onSelectClip,

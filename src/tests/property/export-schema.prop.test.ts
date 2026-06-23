@@ -170,7 +170,7 @@ describe('Property 24: Export Schema Conformance', () => {
         }
 
         const exported = svc.exportProject();
-        const json = exported as Record<string, unknown>;
+        const json = exported as unknown as Record<string, unknown>;
 
         // (a) schema_version is "2.0"
         expect(exported.schema_version).toBe('2.0');
@@ -182,7 +182,7 @@ describe('Property 24: Export Schema Conformance', () => {
 
         // (c) each source record has all required fields
         for (const source of exported.sources) {
-          const srcObj = source as Record<string, unknown>;
+          const srcObj = source as unknown as Record<string, unknown>;
           for (const field of REQUIRED_SOURCE_FIELDS) {
             expect(srcObj).toHaveProperty(field);
           }
@@ -190,7 +190,7 @@ describe('Property 24: Export Schema Conformance', () => {
 
         // (d) each clip record has all required fields
         for (const clip of exported.clips) {
-          const clipObj = clip as Record<string, unknown>;
+          const clipObj = clip as unknown as Record<string, unknown>;
           for (const field of REQUIRED_CLIP_FIELDS) {
             expect(clipObj).toHaveProperty(field);
           }

@@ -61,7 +61,7 @@ describe('Property 11: Duration Calculation Consistency', () => {
         expect(ann.duration_seconds).toBeCloseTo(durationInFrames / fps, 10);
 
         // bars_total should equal beats_total / 4 (when beats_total > 0)
-        if (ann.beats_total > 0) {
+        if (ann.beats_total !== undefined && ann.beats_total > 0) {
           expect(ann.bars_total).toBeCloseTo(ann.beats_total / 4, 10);
         }
       }),

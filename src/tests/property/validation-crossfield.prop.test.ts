@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { validateClip } from '../../services/schema-validator.js';
-import type { ClipAnnotation } from '../../types/index.js';
+import type { ClipAnnotation, DancerState } from '../../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Shared helper
@@ -96,8 +96,12 @@ describe('Property 20: Cross-Field Consistency Validation', () => {
     fc.assert(
       fc.property(stateKeyArb, nonZeroDegArb, (stateKey, deg) => {
         const clip = makeValidClip();
+        // makeValidClip always populates entry_state/exit_state; capture the
+        // base state as a non-optional DancerState so the spread result still
+        // satisfies DancerState's required fields (e.g. `hold`).
+        const baseState: DancerState = clip[stateKey]!;
         clip[stateKey] = {
-          ...clip[stateKey],
+          ...baseState,
           rotation_direction: 'none',
           rotation_degrees: deg,
         };
@@ -118,8 +122,12 @@ describe('Property 20: Cross-Field Consistency Validation', () => {
     fc.assert(
       fc.property(stateKeyArb, badTravelAmountArb, (stateKey, badAmount) => {
         const clip = makeValidClip();
+        // makeValidClip always populates entry_state/exit_state; capture the
+        // base state as a non-optional DancerState so the spread result still
+        // satisfies DancerState's required fields (e.g. `hold`).
+        const baseState: DancerState = clip[stateKey]!;
         clip[stateKey] = {
-          ...clip[stateKey],
+          ...baseState,
           travel_direction: 'stationary',
         };
         clip.motion_profile = { ...clip.motion_profile, travel_amount: badAmount };

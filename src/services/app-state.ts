@@ -83,9 +83,18 @@ export function getAppState(): AppState {
   if (!instance) {
     const projectDir = resolveProjectDir();
     const annotationService = new AnnotationServiceImpl('Bachata Clip Library');
-    const clips = new Map<string, VirtualClipDef>();
-    const cycles = new Map<string, CycleHierarchy>();
-    const analysisResults = new Map<string, AudioAnalysisResult>();
+
+    // Build the state first so startup-restore can reuse the shared
+    // hydrateRuntimeState routine (the same one restoreProjectState uses).
+    const state: AppState = {
+      annotationService,
+      clips: new Map<string, VirtualClipDef>(),
+      cycles: new Map<string, CycleHierarchy>(),
+      analysisResults: new Map<string, AudioAnalysisResult>(),
+      sourceMetadata: new Map(),
+      projectDir,
+      debouncedSaver: createDebouncedSaver(projectDir),
+    };
 
     // Restore from project.json if it exists on disk
     const projectJsonPath = join(projectDir, 'project.json');
@@ -96,23 +105,7 @@ export function getAppState(): AppState {
 
         const result = annotationService.importProject(saved, projectDir);
         if (result.success) {
-          if (saved.virtual_clips) {
-            for (const clip of saved.virtual_clips) {
-              clips.set(clip.clipId, clip);
-            }
-          }
-
-          if (saved.cycle_hierarchies) {
-            for (const [key, hierarchy] of saved.cycle_hierarchies) {
-              cycles.set(key, hierarchy);
-            }
-          }
-
-          if (saved.analysis_results) {
-            for (const [key, result] of saved.analysis_results) {
-              analysisResults.set(key, result);
-            }
-          }
+          hydrateRuntimeState(state, saved);
         } else {
           console.error('Failed to restore project state due to missing files', result.missingFiles);
         }
@@ -121,16 +114,7 @@ export function getAppState(): AppState {
       }
     }
 
-    instance = {
-      annotationService,
-      clips,
-      cycles,
-      analysisResults,
-      sourceMetadata: new Map(),
-      projectDir,
-      debouncedSaver: createDebouncedSaver(projectDir),
-    };
-
+    instance = state;
     registerShutdownHandlers(instance.debouncedSaver);
   }
   return instance;

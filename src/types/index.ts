@@ -2,7 +2,6 @@
 // Matches Annotation Schema v2.0.
 
 import type {
-  AccentPattern,
   CameraAngle,
   ClipStatus,
   Difficulty,
@@ -21,7 +20,6 @@ import type {
   RelativePosition,
   RotationDirection,
   Style,
-  TempoFeel,
   TravelAmount,
   TravelDirection,
   UpperBodyIsolation,

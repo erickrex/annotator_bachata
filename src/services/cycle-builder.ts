@@ -1,9 +1,6 @@
 // Cycle Builder — pure functions for constructing bachata cycle hierarchy.
-// Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6
 
 import type { Cycle, CycleHierarchy, Phrase } from '../types/index.js';
-
-const BEATS_PER_CYCLE = 8;
 
 /**
  * Group beats into Cycle objects of the specified size starting from the

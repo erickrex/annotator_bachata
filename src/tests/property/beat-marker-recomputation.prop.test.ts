@@ -41,7 +41,7 @@ const virtualClipWithBeatsArb = fc
       const clip: VirtualClipDef = {
         clipId: 'test_clip_001_008',
         sourceId: 'test_source',
-        status: 'draft' as const,
+        status: 'pending' as const,
         remotion: { fromFrame, durationInFrames, fps },
         beatMarkerFrames: [],
         cycleNumber: 1,
@@ -74,7 +74,7 @@ const virtualClipNoTrimArb = fc
       const clip: VirtualClipDef = {
         clipId: 'test_clip_001_008',
         sourceId: 'test_source',
-        status: 'draft' as const,
+        status: 'pending' as const,
         remotion: { fromFrame, durationInFrames, fps },
         beatMarkerFrames: [],
         cycleNumber: 1,
@@ -165,7 +165,7 @@ describe('Property 5: Beat marker recomputation preserves only in-range beats re
         const clip: VirtualClipDef = {
           clipId: 'test_clip_001_008',
           sourceId: 'test_source',
-          status: 'draft' as const,
+          status: 'pending' as const,
           remotion: { fromFrame, durationInFrames, fps },
           beatMarkerFrames: [],
           cycleNumber: 1,

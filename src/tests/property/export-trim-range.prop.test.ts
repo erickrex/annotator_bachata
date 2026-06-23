@@ -33,7 +33,7 @@ const clipWithBothTrimPointsArb = fc
     const clip: VirtualClipDef = {
       clipId: 'test_clip_001_008',
       sourceId: 'test_source',
-      status: 'draft' as const,
+      status: 'pending' as const,
       remotion: { fromFrame, durationInFrames, fps },
       beatMarkerFrames: [],
       cycleNumber: 1,
@@ -61,7 +61,7 @@ const clipWithNoTrimPointsArb = fc
     const clip: VirtualClipDef = {
       clipId: 'test_clip_002_008',
       sourceId: 'test_source',
-      status: 'draft' as const,
+      status: 'pending' as const,
       remotion: { fromFrame, durationInFrames, fps },
       beatMarkerFrames: [],
       cycleNumber: 1,
@@ -91,7 +91,7 @@ const clipWithOnlyInPointArb = fc
     const clip: VirtualClipDef = {
       clipId: 'test_clip_003_008',
       sourceId: 'test_source',
-      status: 'draft' as const,
+      status: 'pending' as const,
       remotion: { fromFrame, durationInFrames, fps },
       beatMarkerFrames: [],
       cycleNumber: 1,
