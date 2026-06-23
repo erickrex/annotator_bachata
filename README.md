@@ -2,7 +2,7 @@
 
 Astro + React application for turning a YouTube bachata video into reviewable dance clips.
 
-The app downloads a source video, extracts audio, runs a Python `librosa` analyzer to detect BPM and beat locations, builds bachata cycle boundaries, generates virtual clips, and lets you review, annotate, adjust, merge, split, and export those clips.
+The app downloads a source video, extracts audio, runs a Python `beat_this` analyzer to detect BPM and beat locations, builds bachata cycle boundaries, generates virtual clips, and lets you review, annotate, adjust, merge, split, and export those clips.
 
 ## What It Does
 
@@ -19,8 +19,8 @@ The app downloads a source video, extracts audio, runs a Python `librosa` analyz
 ## Stack
 
 - Frontend and server: Astro 5, React 19, TypeScript
-- Rendering/export: Remotion
-- Python analysis: Python 3.11+, `librosa`, `numpy`
+- Rendering/export: ffmpeg
+- Python analysis: Python 3.11+, `beat_this`, `torch`, `torchaudio`, `numpy`, `scipy`, `soundfile`
 - Tests: Vitest, `fast-check`, pytest
 - External binaries: `uv`, `ffprobe`, `ffmpeg` (YouTube downloads use `uv run yt-dlp` from `pyproject.toml`)
 

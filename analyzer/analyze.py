@@ -132,7 +132,8 @@ def _compute_energy_profile(
 ) -> list[float]:
     """Compute RMS energy profile using scipy for audio loading and numpy for RMS.
 
-    Matches librosa's default behavior: sr=22050, hop_length=512, frame_length=2048.
+    Uses the previous librosa parameter values (sr=22050, hop_length=512,
+    frame_length=2048) for output compatibility.
     """
     from scipy.io import wavfile
     from scipy.signal import resample
@@ -156,7 +157,7 @@ def _compute_energy_profile(
         num_samples = int(len(audio) * sr / file_sr)
         audio = resample(audio, num_samples).astype(np.float32)
 
-    # Compute RMS with windowed frames (matching librosa defaults)
+    # Compute RMS with windowed frames using the preserved frame_length value (2048)
     frame_length = 2048
     # Pad audio to ensure we get frames for the full duration (center padding)
     pad_length = frame_length // 2
