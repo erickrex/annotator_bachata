@@ -16,10 +16,10 @@
     "@astrojs/react": "^4.2.0",
     "astro": "^5.8.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "remotion": "^4.0.0"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@types/node": "^20.17.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "fast-check": "^4.1.1",
