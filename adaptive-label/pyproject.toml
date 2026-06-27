@@ -1,0 +1,30 @@
+[project]
+name = "adaptive-label-media-runtime"
+version = "0.1.0"
+description = "Runtime audio analysis tools for AdaptiveLabel media ingestion"
+requires-python = ">=3.11"
+dependencies = [
+    "beat-this @ git+https://github.com/CPJKU/beat_this.git",
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "soundfile>=0.12.0",
+    "yt-dlp>=2024.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["analyzer"]
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.0.0",
+    "pytest>=7.0.0",
+]

@@ -1,0 +1,22 @@
+{
+  "generatedBy": "scripts/generate-seed.mjs",
+  "ipClean": true,
+  "projects": [
+    {
+      "slug": "bachata",
+      "name": "Bachata Move Annotation",
+      "domain": "bachata",
+      "presetKey": "bachata",
+      "timelineMode": "beat_grid",
+      "clipsFile": "clips.bachata.json"
+    },
+    {
+      "slug": "sign_language",
+      "name": "Sign Language Gloss Annotation",
+      "domain": "sign_language",
+      "presetKey": "sign_language",
+      "timelineMode": "gloss_segments",
+      "clipsFile": "clips.sign_language.json"
+    }
+  ]
+}

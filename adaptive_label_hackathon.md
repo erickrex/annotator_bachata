@@ -1,1186 +1,667 @@
-# AdaptiveLabel Hackathon Implementation Plan
+# AdaptiveLabel — Hackathon Implementation Plan (Revised)
 
-Last updated: June 14, 2026
+Last updated: June 24, 2026
+
+Revision note: This plan was rewritten to focus the demo on two contrasting
+movement domains — **bachata dance** and **sign language** — to compress scope
+to a realistic build window, and to make the Vercel v0 / AI SDK generative-UI
+story the technical centerpiece. The earlier three-domain version (dance +
+physical therapy + warehouse safety) is preserved only as a roadmap talking
+point, not as build scope. It also adds **pgvector semantic retrieval** as a
+deliberate, Aurora-specific capability, and reorganizes the build into a tiered
+scope (core spine / should-have / cut) so the must-ship slice is unambiguous.
 
 ## 1. Executive Summary
 
-AdaptiveLabel is a B2B video annotation platform that creates a task-specific labeling workspace for each dataset type. Instead of forcing every team into one generic labeling UI, the product asks what kind of videos the team needs to label, generates a domain schema, renders the right controls, validates annotations, routes work through review, and exports production-ready datasets.
-
-The strongest hackathon framing is:
-
-> AdaptiveLabel: AI-assisted, schema-driven video labeling workspaces for teams building specialized video datasets.
-
-This is not a generic Label Studio clone. The wedge is adaptive video labeling:
-
-- Dance datasets need beat grids, phrase-aligned clip boundaries, entry/exit state, motion labels, stitchability, and rhythm-aware review.
-- Physical therapy datasets need joint range, posture, exercise phase, pain markers, side of body, repetition quality, and clinician review.
-- Warehouse safety datasets need incident timing, hazard type, worker posture, PPE compliance, zone, severity, and compliance audit trails.
-
-The app should demonstrate that a single database-backed platform can generate and operate all three labeling workspaces from the same core model.
-
-## 2. Hackathon Fit
-
-H0 requires a full-stack application using Vercel or v0 for the frontend and one of the specified AWS Databases as the primary backend: Aurora PostgreSQL, Aurora DSQL, or DynamoDB. The Devpost page also asks for a published Vercel Project Link, Vercel Team ID, architecture diagram, and proof of AWS Database usage.
-
-Source references:
-
-- H0 overview: https://h01.devpost.com/
-- H0 rules: https://h01.devpost.com/rules
-
-Judging criteria to optimize for:
-
-- Technological implementation: deliberate AWS Database data model, clean architecture, Vercel deployment beyond basics.
-- Design: intuitive adaptive UX where frontend and backend feel intentionally connected.
-- Impact and real-world applicability: solve a meaningful B2B data-labeling problem with a shippable workflow.
-- Originality: adaptive labeling workspaces, not another static annotation dashboard.
-
-Recommended track:
-
-- Primary: Track 2, Monetizable B2B App.
-- Backup: Track 4, Open Innovation, if the final demo leans more toward creative video workflows than enterprise labeling.
-
-## 3. Realistic Winning Thesis
-
-The winning version is not "v0 generates forms." The winning version is:
-
-> v0 accelerates the design of custom labeling workspaces, while Aurora PostgreSQL stores the durable schema, annotations, review workflow, audit history, and export state.
-
-To be credible, the generated/adaptive UI must be backed by:
-
-- A real tenant/project/user model.
-- A database-native schema definition system.
-- A renderer that turns schemas into production labeling interfaces.
-- A workflow engine for assignment, review, approval, rejection, and export.
-- A video processing path for clip generation, thumbnails, waveform/beat metadata, and derived assets.
-- A demo showing multiple domains on one platform.
-
-## 4. Product Scope
-
-### MVP Product Promise
-
-Given a description of a video dataset, AdaptiveLabel creates:
-
-- A domain-specific labeling schema.
-- A purpose-built labeling UI.
-- Validation rules.
-- Review workflow.
-- Export format.
-- Dashboard for progress and quality.
-
-### Demo Domains
-
-Use three domains to prove adaptability:
-
-1. Bachata dance movement labeling
-   - Reuses the existing repo's strongest differentiator.
-   - Shows beat-aware video segmentation and choreography-specific fields.
-
-2. Physical therapy exercise review
-   - Shows high-value B2B/healthcare-adjacent use case.
-   - Avoid medical diagnosis claims. Position as dataset labeling and clinician review support.
-
-3. Warehouse safety incident labeling
-   - Shows enterprise compliance and operations use case.
-   - Easy for judges to understand quickly.
-
-## 5. User Personas
-
-### Dataset Operations Manager
-
-Owns data production for an AI team. Needs fast setup, clear progress, QA, reviewer assignment, and reliable exports.
-
-### Domain Expert Annotator
-
-Labels videos in a specific field. Needs a UI that matches their task vocabulary and minimizes irrelevant fields.
-
-### Reviewer / QA Lead
-
-Approves or rejects annotations, checks consistency, resolves disagreements, and exports approved datasets.
-
-### ML Engineer
-
-Consumes the exported dataset. Needs stable JSONL/CSV exports, media URLs, train/validation/test splits, and schema versioning.
-
-## 6. Core User Flows
-
-### Flow 1: Create Adaptive Workspace
-
-1. User creates an organization and project.
-2. User describes the dataset:
-   - "I need to label bachata dance clips for movement retrieval and choreography generation."
-   - "I need to label physical therapy knee rehab videos."
-   - "I need to label warehouse safety incidents."
-3. AI suggests:
-   - Project name.
-   - Label schema.
-   - Field types.
-   - Validation rules.
-   - Workflow stages.
-   - Export template.
-4. User accepts or edits the generated schema.
-5. App persists the schema in Aurora PostgreSQL.
-6. The labeling UI is rendered from the schema.
-
-### Flow 2: Upload and Prepare Videos
-
-1. User uploads one or more videos.
-2. App stores source media in object storage.
-3. App creates media asset records in the database.
-4. Worker generates thumbnails, preview clips, duration, fps, dimensions, and optional audio analysis.
-5. For dance projects, worker creates beat-aligned clips and phrase metadata.
-6. App creates labeling tasks from generated clips or full videos.
-
-### Flow 3: AI Pre-Labeling
-
-1. User clicks "Draft labels."
-2. App sends frames, clip metadata, audio/beat metadata, and schema to an AI service.
-3. AI returns structured field values, confidence scores, and evidence notes.
-4. App validates output against the schema.
-5. Low-confidence fields are highlighted for human review.
-6. Draft labels are stored separately from approved annotations.
-
-### Flow 4: Human Labeling
-
-1. Annotator opens assigned task.
-2. App renders the schema-specific labeling workspace.
-3. Annotator reviews video, edits labels, and submits.
-4. Validation runs before submission.
-5. Task moves to review.
-
-### Flow 5: Review and QA
-
-1. Reviewer opens pending review queue.
-2. Reviewer sees original AI draft, annotator edits, validation results, and task history.
-3. Reviewer approves, requests changes, or rejects.
-4. Audit events are written to the database.
-5. Dashboard updates progress and quality metrics.
-
-### Flow 6: Export Dataset
-
-1. User chooses approved labels only or all labels with status.
-2. User selects export format:
-   - JSONL
-   - CSV
-   - Project JSON
-   - Custom ML manifest
-3. App creates an export job.
-4. Worker generates export file and stores it.
-5. User downloads the export or copies signed URL.
-
-## 7. v0 Strategy
-
-Use v0 for design acceleration and as part of the hackathon story, but do not make the product depend on unsafe runtime code generation.
-
-Recommended implementation:
-
-- Use v0 to scaffold the Next.js/Vercel UI shell.
-- Use shadcn/ui-compatible components for consistency.
-- Build a deterministic schema renderer for production behavior.
-- Let AI generate database-backed schema configuration, not arbitrary live React code.
-- Store generated workspace definitions in Aurora PostgreSQL.
-- Render UI from trusted field/component types.
-
-Allowed field/component types:
-
-- Text input
-- Text area
-- Select
-- Multi-select
-- Checkbox
-- Radio group
-- Slider
-- Number input
-- Time range selector
-- Timeline segment marker
-- Video frame tag
-- Beat/phrase marker
-- Quality score
-- Reviewer decision
-
-Avoid for MVP:
-
-- Runtime execution of AI-generated code.
-- Arbitrary CSS/JS generated per customer.
-- Multi-user real-time collaboration.
-- Full plugin marketplace.
-
-## 8. Existing Repo Reuse Plan
-
-The current `annotator-bachata` repo already has valuable pieces:
-
-- YouTube/video ingestion patterns.
-- Audio analysis and beat grid logic.
-- Cycle builder for 4/8/16/32 beat phrase segmentation.
-- Clip generation.
-- Annotation schema and validation concepts.
-- Review UI concepts.
-- Export concepts.
-
-Recommended reuse:
-
-- Extract service logic into a backend worker package where useful.
-- Preserve bachata as the flagship domain preset.
-- Reimplement the primary hackathon app as a Vercel-friendly Next.js application.
-- Move local JSON persistence into Aurora PostgreSQL.
-- Move local media files into object storage.
-- Move long-running video work into worker jobs.
-
-Do not rely on the current local-only architecture for the final deployed demo. Vercel functions should not perform long-running ffmpeg or Python analysis directly.
-
-## 9. Target Architecture
-
-### High-Level Components
-
-- Vercel Next.js app
-  - Landing/dashboard
-  - Schema generation wizard
-  - Video labeling workspace
-  - Review queue
-  - Export dashboard
-
-- Aurora PostgreSQL
-  - Source of truth for tenants, users, projects, schemas, tasks, annotations, jobs, exports, and audit events.
-
-- Object storage
-  - Stores uploaded videos, thumbnails, extracted clips, export files, and generated preview artifacts.
-
-- Worker runtime
-  - Performs video probing, thumbnail generation, optional ffmpeg clip extraction, audio/beat analysis, and export generation.
-  - For hackathon MVP, this can be a small separate Node worker or server job runner. For a production architecture diagram, show ECS/Fargate or Lambda depending on implementation feasibility.
-
-- AI service
-  - Generates schema drafts.
-  - Drafts annotations from video evidence and metadata.
-  - Produces field confidence and evidence notes.
-
-### Request Flow
-
-1. User interacts with Vercel-hosted Next.js UI.
-2. Next.js API routes read/write Aurora PostgreSQL.
-3. Video uploads go to object storage through signed URLs.
-4. API creates processing jobs in Aurora PostgreSQL.
-5. Worker claims queued jobs, processes media, writes derived assets, and updates job status.
-6. Labeling UI renders from schema stored in Aurora PostgreSQL.
-7. Annotation submissions write to Aurora PostgreSQL.
-8. Export jobs create downloadable dataset files.
-
-## 10. Database Choice
-
-Recommended: Aurora PostgreSQL.
-
-Reasons:
-
-- Strong fit for relational B2B workflow state.
-- Good for schema versioning, review history, permissions, and export joins.
-- Easier to demonstrate deliberate data modeling than DynamoDB for this use case.
-- Better fit for querying annotation progress, task status, project metrics, and exports.
-
-Potential future extension:
-
-- Use pgvector if available and appropriate for label memory or semantic retrieval.
-- Keep this optional. Do not make vector search required for the MVP.
-
-## 11. Data Model
-
-### organizations
-
-- id
-- name
-- slug
-- plan
-- created_at
-- updated_at
-
-### users
-
-- id
-- email
-- display_name
-- created_at
-- updated_at
-
-### organization_members
-
-- organization_id
-- user_id
-- role: owner, admin, annotator, reviewer, viewer
-- created_at
-
-### projects
-
-- id
-- organization_id
-- name
-- description
-- domain: dance, physical_therapy, warehouse_safety, custom
-- status: draft, active, archived
-- created_by
-- created_at
-- updated_at
-
-### label_schemas
-
-- id
-- project_id
-- version
-- name
-- description
-- status: draft, active, retired
-- generation_prompt
-- created_by
-- created_at
-- activated_at
-
-### label_fields
-
-- id
-- schema_id
-- key
-- label
-- description
-- field_type
-- required
-- order_index
-- config_json
-- validation_json
-
-### workflow_stages
-
-- id
-- project_id
-- key
-- label
-- order_index
-- config_json
-
-### media_assets
-
-- id
-- project_id
-- original_filename
-- storage_key
-- media_type
-- duration_seconds
-- fps
-- width
-- height
-- status: uploaded, processing, ready, failed
-- metadata_json
-- created_at
-
-### derived_assets
-
-- id
-- media_asset_id
-- asset_type: thumbnail, preview_clip, waveform, extracted_clip, export
-- storage_key
-- metadata_json
-- created_at
-
-### audio_analysis
-
-- id
-- media_asset_id
-- bpm
-- bpm_confidence
-- downbeat_offset_seconds
-- beat_grid_json
-- beat_grid_frames_json
-- energy_profile_json
-- created_at
-
-### clips
-
-- id
-- project_id
-- media_asset_id
-- clip_index
-- start_frame
-- end_frame
-- start_seconds
-- end_seconds
-- duration_seconds
-- beat_count
-- phrase_index
-- status: draft, ready, discarded
-- metadata_json
-- created_at
-
-### labeling_tasks
-
-- id
-- project_id
-- media_asset_id
-- clip_id
-- schema_id
-- assigned_to
-- status: queued, in_progress, submitted, changes_requested, approved, rejected
-- priority
-- due_at
-- created_at
-- updated_at
-
-### annotations
-
-- id
-- task_id
-- schema_id
-- author_id
-- source: human, ai_draft, import
-- status: draft, submitted, approved, rejected
-- values_json
-- confidence_json
-- validation_json
-- created_at
-- updated_at
-
-### annotation_reviews
-
-- id
-- annotation_id
-- reviewer_id
-- decision: approved, changes_requested, rejected
-- notes
-- created_at
-
-### audit_events
-
-- id
-- organization_id
-- project_id
-- actor_id
-- event_type
-- entity_type
-- entity_id
-- before_json
-- after_json
-- created_at
-
-### ai_runs
-
-- id
-- project_id
-- task_id
-- run_type: schema_generation, pre_label, review_assist
-- model
-- prompt_json
-- output_json
-- status: queued, running, succeeded, failed
-- error_message
-- created_at
-- completed_at
-
-### jobs
-
-- id
-- project_id
-- job_type: probe_media, generate_thumbnail, analyze_audio, generate_clips, pre_label, export_dataset
-- status: queued, running, succeeded, failed
-- input_json
-- output_json
-- error_message
-- created_at
-- started_at
-- completed_at
-
-### exports
-
-- id
-- project_id
-- requested_by
-- format: jsonl, csv, project_json, custom_manifest
-- status: queued, running, succeeded, failed
-- storage_key
-- filters_json
-- created_at
-- completed_at
-
-## 12. Domain Presets
-
-### Dance Preset
-
-Purpose: label human movement clips for choreography retrieval, video generation datasets, and instruction products.
-
-Special UI:
-
-- Video player
-- Beat markers
-- 8/16/32 count phrase display
-- Clip trimming by beat
-- Entry/exit state sections
-- Movement profile
-- Camera quality
-- Stitchability score
-
-Core fields:
-
-- move_label
-- move_family
-- style
-- difficulty
-- energy_level
-- entry_hold
-- exit_hold
-- entry_position
-- exit_position
-- rotation_direction
-- travel_direction
-- spin_count
-- bodywave
-- dip
-- visibility_score
-- stitchability
-
-### Physical Therapy Preset
-
-Purpose: label exercise videos for rehab dataset creation and clinician QA.
-
-Special UI:
-
-- Rep counter
-- Phase markers: setup, concentric, hold, eccentric, rest
-- Side of body selector
-- Pain/discomfort marker
-- Range quality score
-- Clinician review panel
-
-Core fields:
-
-- exercise_type
-- body_region
-- side
-- rep_count
-- form_quality
-- range_of_motion_score
-- compensation_observed
-- pain_marker_present
-- assistance_level
-- review_required
-
-Safety note: demo language should avoid diagnosis or treatment claims. Position it as annotation workflow software.
-
-### Warehouse Safety Preset
-
-Purpose: label industrial and warehouse videos for compliance, safety training, and incident detection datasets.
-
-Special UI:
-
-- Timeline incident marker
-- Hazard category selector
-- PPE checklist
-- Zone selector
-- Severity rating
-- Compliance notes
-
-Core fields:
-
-- incident_type
-- hazard_category
-- ppe_compliance
-- worker_posture
-- zone
-- severity
-- near_miss
-- equipment_involved
-- visibility_score
-- escalation_required
-
-## 13. Adaptive Schema Generation
-
-### Inputs
-
-- Dataset description
-- Industry/domain
-- Labeling goal
-- Intended model/use case
-- Required export format
-- Compliance needs
-- Example labels or uploaded sample
-
-### AI Output
-
-The AI should return:
-
-- Project domain
-- Recommended schema name
-- Field definitions
-- Field groups
-- Field types
-- Options for enum fields
-- Validation rules
-- Suggested workflow stages
-- Suggested QA checks
-- Suggested export mapping
-
-### Guardrails
-
-- AI output must validate against a strict schema.
-- Users must approve before activation.
-- Once active, schema versions are immutable.
-- New edits create a new schema version.
-- Existing annotations remain tied to their original schema version.
-
-## 14. Schema Renderer
-
-Build a deterministic renderer:
-
-- Reads active `label_schemas` and `label_fields`.
-- Groups fields by section.
-- Renders approved component types only.
-- Applies validation rules before submission.
-- Stores values as JSON while preserving field metadata in relational tables.
-
-Renderer responsibilities:
-
-- Display field labels and help text.
-- Render domain-specific video controls when the schema requires them.
-- Validate required fields, ranges, enums, and conditional rules.
-- Show AI confidence and evidence when available.
-- Track dirty state and autosave draft annotations.
-
-## 15. AI Pre-Labeling Plan
-
-### MVP
-
-For each task:
-
-1. Select representative frames or preview clip metadata.
-2. Include schema and field definitions.
-3. Ask AI to return JSON values only.
-4. Validate values against schema.
-5. Store as an `annotations` row with `source = ai_draft`.
-6. Render AI draft in the labeling UI.
-
-### Confidence Model
-
-Each field should have:
-
-- value
-- confidence: 0.0 to 1.0
-- evidence: short explanation
-- needs_review: boolean
-
-### UI Behavior
-
-- High confidence: prefill normally.
-- Medium confidence: prefill with subtle warning.
-- Low confidence: highlight for review.
-- Invalid output: show empty field and log validation error.
-
-## 16. UI Plan
-
-### Navigation
-
-- Dashboard
-- Projects
-- Project detail
-- Schema builder
-- Media library
-- Labeling queue
-- Review queue
-- Exports
-- Settings
-
-### Key Screens
-
-#### Landing / Product Page
-
-Goal: explain the product in 20 seconds.
-
-Hero message:
-
-> Custom video labeling workspaces generated from your dataset needs.
-
-CTA:
-
-- Create adaptive workspace
-- View demo projects
-
-#### Project Creation Wizard
-
-Steps:
-
-1. Describe dataset.
-2. Choose domain preset or custom.
-3. Review generated schema.
-4. Choose workflow.
-5. Create project.
-
-#### Schema Builder
-
-Features:
-
-- Field list
-- Field preview
-- Add/edit/delete fields
-- Validation config
-- Version activation
-- Domain UI modules toggle
-
-#### Media Library
-
-Features:
-
-- Upload video
-- Show processing status
-- Show thumbnails
-- Show duration, fps, dimensions
-- Create tasks from full video or clips
-
-#### Labeling Workspace
-
-Layout:
-
-- Left: task queue and status.
-- Center: video player and timeline.
-- Right: adaptive label form.
-- Bottom: validation, AI draft notes, submit controls.
-
-Domain-specific modules:
-
-- Dance: beat grid and phrase labels.
-- Physical therapy: rep/phase markers.
-- Warehouse safety: incident timeline markers.
-
-#### Review Queue
-
-Features:
-
-- Pending annotations
-- Diff AI draft vs human edit
-- Reviewer notes
-- Approve/request changes/reject
-- Audit history
-
-#### Dashboard
-
-Metrics:
-
-- Videos uploaded
-- Tasks queued
-- Tasks submitted
-- Tasks approved
-- Average completion time
-- AI draft acceptance rate
-- Review rejection rate
-- Export count
-
-#### Export Center
-
-Features:
-
-- Format selector
-- Filter approved labels
-- Include/exclude AI drafts
-- Generate export
-- Download export
-- Show export history
-
-## 17. Implementation Phases
-
-### Phase 0: Scope Lock
-
-Duration: 0.5 day
-
-Tasks:
-
-- Confirm target track: B2B primary, Open Innovation backup.
-- Choose Aurora PostgreSQL.
-- Pick final product name.
-- Pick three demo domains.
-- Decide which AI features are real vs mocked.
-- Choose deployment architecture.
-
-Exit criteria:
-
-- One-page pitch locked.
-- Data model locked enough to implement.
-- Demo script outline approved.
-
-### Phase 1: New Vercel App Foundation
-
-Duration: 1 day
-
-Tasks:
-
-- Create Next.js app intended for Vercel deployment.
-- Use v0-generated UI shell or manually import v0/shadcn-inspired components.
-- Add authentication stub or lightweight demo login.
-- Add project dashboard shell.
-- Add environment variable structure.
-- Add database connection layer.
-
-Exit criteria:
-
-- App deploys to Vercel.
-- Can connect to Aurora PostgreSQL.
-- Can render dashboard and project pages.
-
-### Phase 2: Aurora Schema and Core CRUD
-
-Duration: 1 to 1.5 days
-
-Tasks:
-
-- Create migration system.
-- Implement organizations, users, projects.
-- Implement label schemas and label fields.
-- Implement media assets, clips, tasks, annotations.
-- Implement audit events.
-- Seed demo organization and demo projects.
-
-Exit criteria:
-
-- Database migrations run cleanly.
-- Demo projects can be created and loaded.
-- Schema definitions persist in Aurora.
-
-### Phase 3: Adaptive Schema Wizard
-
-Duration: 1 to 1.5 days
-
-Tasks:
-
-- Build dataset description wizard.
-- Add preset generator for three demo domains.
-- Add AI schema generation if time permits.
-- Add schema review/edit screen.
-- Add schema activation/versioning.
-
-Exit criteria:
-
-- User can create a project from a natural language dataset description.
-- User can review and activate generated schema.
-- App renders correct field definitions from database.
-
-### Phase 4: Schema-Driven Label Renderer
-
-Duration: 1.5 days
-
-Tasks:
-
-- Build field renderer for approved field types.
-- Build form validation.
-- Build autosave draft annotation.
-- Build submit workflow.
-- Build status transitions.
-- Add confidence/evidence display for AI draft fields.
-
-Exit criteria:
-
-- Same renderer supports all three demo domains.
-- Annotation values save to Aurora.
-- Required fields and enum/range validation work.
-
-### Phase 5: Media and Video Workflow
-
-Duration: 1.5 to 2 days
-
-Tasks:
-
-- Implement media upload path.
-- Store media metadata.
-- Generate or seed thumbnails/previews for demo.
-- Implement task creation from video or clips.
-- Integrate existing bachata beat/clip logic for dance preset if feasible.
-- If full processing is too risky, seed processing outputs in Aurora and use short demo media.
-
-Exit criteria:
-
-- User can see media assets.
-- User can create labeling tasks.
-- Dance demo shows beat/phrase-aware clips.
-- Physical therapy and warehouse demos show task-specific video controls.
-
-### Phase 6: AI Draft Labels
-
-Duration: 1 day
-
-Tasks:
-
-- Implement AI run table.
-- Add "Draft labels" action.
-- Send schema and media evidence to AI service or deterministic demo generator.
-- Validate structured output.
-- Store AI draft annotation.
-- Display field confidence and evidence.
-
-Exit criteria:
-
-- AI draft labels appear in the adaptive form.
-- User can accept/edit AI draft.
-- Low-confidence fields are highlighted.
-
-### Phase 7: Review, QA, and Audit Trail
-
-Duration: 1 day
-
-Tasks:
-
-- Build review queue.
-- Add approve/request changes/reject.
-- Add review notes.
-- Add audit event writing.
-- Add dashboard metrics.
-
-Exit criteria:
-
-- Annotator can submit.
-- Reviewer can approve/reject.
-- Dashboard reflects task status.
-- Audit history is visible.
-
-### Phase 8: Export Center
-
-Duration: 0.5 to 1 day
-
-Tasks:
-
-- Implement JSONL export.
-- Implement CSV export.
-- Implement project JSON export.
-- Store export records in Aurora.
-- Create downloadable export artifact.
-
-Exit criteria:
-
-- User can export approved annotations.
-- Export includes media references, task IDs, schema version, labels, status, and metadata.
-
-### Phase 9: Polish and Hackathon Submission Assets
-
-Duration: 1 day
-
-Tasks:
-
-- Improve UI spacing, empty states, loading states, and errors.
-- Add architecture diagram.
-- Add AWS Database proof screenshot.
-- Add Vercel project link and team ID.
-- Record under 3-minute demo video.
-- Write Devpost description.
-- Prepare optional public build article for bonus points.
-
-Exit criteria:
-
-- Demo can be run end to end without manual database edits.
-- Submission checklist is complete.
-
-## 18. MVP Cut Line
-
-Must have:
-
-- Vercel deployed app.
-- Aurora PostgreSQL integrated as primary backend.
-- Adaptive project creation wizard.
-- At least three domain schemas.
-- Schema-driven labeling UI.
-- Video player.
-- Annotation save/submit/review.
-- Export approved annotations.
-- Architecture diagram and AWS DB proof.
-
-Should have:
-
-- AI schema generation.
-- AI pre-labeling.
-- Dashboard metrics.
-- Audit history.
-- Dance beat-aware clip view.
-
-Nice to have:
-
-- Real media processing workers.
-- Full beat analysis in deployed environment.
-- Multi-user auth.
-- Semantic search over tasks.
-- Model evaluation metrics.
-
-Explicitly cut if time is tight:
-
-- Arbitrary runtime UI code generation.
-- Full ffmpeg render/export in cloud.
-- Real-time collaborative labeling.
-- Payment/subscription flow.
-- Full enterprise permission model.
-
-## 19. Hackathon Demo Script
-
-Target length: 2 minutes 45 seconds.
-
-### 0:00 to 0:20 - Problem
-
-"Companies building video AI need labeled datasets, but generic labeling tools force every domain into the same interface. A dance dataset, a rehab dataset, and a warehouse safety dataset should not use the same labeling workspace."
-
-### 0:20 to 0:45 - Create Adaptive Workspace
-
-Show project wizard:
-
-- Type: "Label bachata dance clips for movement retrieval and choreography generation."
-- App generates fields, validation rules, and workflow.
-- User activates schema.
-
-### 0:45 to 1:15 - Dance Labeling
-
-Show dance workspace:
-
-- Video player.
-- Beat/phrase metadata.
-- Movement labels.
-- Entry/exit state.
-- Stitchability score.
-- AI draft confidence.
-
-### 1:15 to 1:45 - Prove Adaptability
-
-Switch projects:
-
-- Physical therapy project with rep/phase/range-of-motion fields.
-- Warehouse safety project with incident/PPE/severity fields.
-
-Emphasize that these are generated from database-backed schemas, not hardcoded separate apps.
-
-### 1:45 to 2:10 - Review and QA
-
-Show review queue:
-
-- Human annotation.
-- AI draft.
-- Reviewer decision.
-- Audit event.
-
-### 2:10 to 2:30 - Export
-
-Show export center:
-
-- Approved labels only.
-- JSONL export.
-- Download artifact.
-
-### 2:30 to 2:45 - Architecture
-
-Show diagram:
-
-- Vercel/v0 frontend.
-- Aurora PostgreSQL.
-- Object storage.
-- Worker jobs.
-- AI pre-labeling.
-
-End with:
-
-"AdaptiveLabel turns dataset requirements into production labeling workspaces, with Aurora as the durable workflow and schema backbone."
-
-## 20. Devpost Positioning
-
-### Project Tagline
-
-AI-assisted adaptive video labeling workspaces for specialized datasets.
-
-### Short Description
-
-AdaptiveLabel lets B2B teams create a custom video labeling workspace from a plain-English dataset description. The app generates a schema, renders a task-specific labeling UI, drafts labels with AI, routes work through human review, and exports approved datasets. It uses Vercel/v0 for the frontend and Aurora PostgreSQL as the source of truth for schemas, tasks, annotations, reviews, audit events, and exports.
-
-### Problem
-
-Companies building video AI often need custom annotation tools for each dataset. Generic platforms are flexible but slow to configure, hard for domain experts to use, and weak at domain-specific video workflows.
-
-### Solution
-
-AdaptiveLabel creates a labeling workspace that matches the video domain. Dance teams get beat-aware movement labels. Rehab teams get rep and movement-quality labels. Safety teams get incident and compliance labels. All workflows share one production-grade database model.
-
-### Why This Stack
-
-- v0/Vercel: fast creation and deployment of polished adaptive frontends.
-- Aurora PostgreSQL: durable relational source of truth for multi-tenant B2B workflow state.
-- Object storage: scalable media and export storage.
-- Worker jobs: reliable processing for video-derived assets and exports.
-
-## 21. Technical Risks and Mitigations
-
-### Risk: Scope too large
-
-Mitigation:
-
-- Use seeded media and processing outputs where necessary.
-- Prioritize schema renderer, Aurora model, and demo workflows.
-- Keep video processing minimal for hackathon.
-
-### Risk: v0 framing looks superficial
-
-Mitigation:
-
-- Show generated/adaptive UI driven by database schemas.
-- Explain that v0 accelerated UI creation, but Aurora powers the product behavior.
-
-### Risk: AI output unreliable
-
-Mitigation:
-
-- Validate all AI output.
-- Require human approval.
-- Store AI draft separately from approved annotations.
-- Use deterministic preset fallback for demo.
-
-### Risk: Media processing fails on deployment
-
-Mitigation:
-
-- Do not run long ffmpeg jobs inside Vercel functions.
-- Use preprocessed demo media or a separate worker.
-- Keep deployed demo focused on labeling workflow.
-
-### Risk: Looks like Label Studio clone
-
-Mitigation:
-
-- Lead with adaptive workspaces.
-- Show three domain-specific interfaces.
-- Emphasize schema generation, review workflow, and domain modules.
-
-## 22. Success Metrics
-
-### Product Metrics
-
-- Time to create a new labeling workspace.
-- Time to first submitted annotation.
-- Percent of fields prefilled by AI.
-- AI draft acceptance rate.
-- Review approval rate.
-- Export generation time.
-
-### Hackathon Metrics
-
-- Demo completes in under 3 minutes.
-- Judges understand problem in under 20 seconds.
-- Aurora data model is visible and deliberate.
-- UI feels polished and domain-specific.
-- App shows at least three distinct domains from one platform.
-
-## 23. Submission Checklist
-
-- [ ] Vercel deployed app.
-- [ ] Vercel Project Link.
-- [ ] Vercel Team ID.
-- [ ] Aurora PostgreSQL database provisioned.
+AdaptiveLabel is a B2B platform that generates a task-specific video labeling
+workspace from a plain-English dataset description. Instead of forcing every
+team into one generic labeling UI, the product reads what kind of movement a
+team needs to label, generates a domain schema, renders the right controls and
+timeline, validates annotations, routes work through review, and exports a
+production-ready dataset.
+
+Hackathon framing:
+
+> AdaptiveLabel: AI-generated, schema-driven labeling workspaces for teams
+> building human-movement video datasets.
+
+The wedge is **adaptive movement labeling**. Generic tools (Label Studio, CVAT)
+are weak at time- and rhythm-aware labeling. AdaptiveLabel treats a video as a
+temporal grid of meaningful movement units and adapts that timeline per domain:
+
+- **Bachata** needs a musical beat grid, 8/16/32-count phrase boundaries,
+  entry/exit state, movement labels, and stitchability.
+- **Sign language** needs sign (gloss) boundaries, phrase/sentence grouping,
+  handshape and non-manual markers, and linguistic review.
+
+One database-backed engine generates and operates both workspaces. Showing two
+domains that look completely different on screen — but run on the same Aurora
+schema and the same deterministic renderer — is the demo's AHA moment.
+
+Aurora does more than store rows. **pgvector** powers semantic retrieval ("find
+clips like this one") across the labeled dataset, including across domains. This
+makes the database an active part of the product rather than a passive store, and
+exercises an Aurora-specific capability that scores directly on Technical
+Implementation.
+
+The core technical principle, enforced everywhere:
+
+> **AI generation produces config / structured objects (validated against a Zod
+> schema) that feed trusted, hand-built components. We never generate or execute
+> UI code at runtime.**
+
+## 2. Verified Hackathon Facts
+
+Source: https://h01.devpost.com/ and https://h01.devpost.com/rules
+
+- **Event:** H0 — Hack the Zero Stack with Vercel v0 and AWS Databases.
+- **Submission deadline:** June 29, 2026, 5:00 pm Pacific Time. (~5 days from
+  this revision.)
+- **Judging:** June 30 – July 24, 2026. Winners on or around July 31, 2026.
+- **Stack requirement (all tracks):** full-stack app using one of three AWS
+  databases — **Aurora, Aurora DSQL, or DynamoDB** — as the primary backend,
+  with the frontend deployed on **Vercel or v0.app**.
+- **Credits:** $100 AWS + $30 v0 credits available; the AWS credit request form
+  closes **June 26 at 12:00 pm PT**. Request now if you want them.
+- **New & Existing rule:** prior work is allowed, but the AWS Database + Vercel
+  integration must be added during the submission period, and you must explain
+  what was significantly updated. A fresh Next.js app cleanly satisfies this.
+
+### Tracks
+- Track 1: Monetizable B2C
+- Track 2: Monetizable B2B  ← **our primary**
+- Track 3: Million-scale global
+- Track 4: Open Innovation  ← **backup**
+
+### Judging Criteria (equally weighted)
+1. **Technical Implementation** — deliberate AWS database data model/schema/query
+   design; Vercel deployment beyond basics; clean, purposeful architecture over
+   surface-level generation.
+2. **Design** — intuitive UX; frontend designed in relation to the backend;
+   cohesive full-stack feel.
+3. **Impact & Real-World Applicability** — meaningful problem, real audience,
+   shippable.
+4. **Originality** — creative concept and genuine insight about the stack.
+
+Plus **up to +0.6 bonus** for published content (0.2 each) explaining how the
+project was built with the AWS database + Vercel. Final scores range 1–5.6.
+
+### Prizes
+- Each track: 1st $10k / 2nd $5k / 3rd $3k (cash + matching AWS credits).
+- Four cross-cutting "Best of" prizes ($2k each), open to all submissions:
+  **Best Technical Implementation, Best Design, Most Impactful, Most Original.**
+- Each project can win only one prize. Our most reachable shots: a B2B podium
+  slot, or **Most Original / Most Impactful** via the dance + sign-language story.
+
+## 3. Realistic Odds and Where to Spend Effort
+
+A polished, deployed, working version has roughly a **15–25% shot at some
+prize**, with the best odds on Most Original / Most Impactful. The domain choice
+is a multiplier on execution, not a substitute for it. The decision order that
+actually wins:
+
+1. A working, deployed app on the submitted link (Stage One is pass/fail).
+2. A tight sub-3-minute video where the adaptive reveal lands and Aurora is
+   clearly the backbone.
+3. A deliberate, visible Aurora data model.
+4. Polished UI.
+5. Domain choice (dance + sign language) and the +0.6 content bonus.
+
+Protect items 1–3 above all. Sign language and dance are the emotional hook on
+top of solid engineering, not the thing being graded first.
+
+## 4. Winning Thesis and Pitch
+
+The credible thesis is not "v0 generates forms." It is:
+
+> v0 and the Vercel AI SDK accelerate generation of custom labeling workspaces,
+> while Aurora PostgreSQL stores the durable schema, annotations, review
+> workflow, audit history, and export state.
+
+### Pitch framing (use this language)
+- **Product:** AI-generated, schema-driven labeling workspaces for human-movement
+  video datasets.
+- **Buyer:** ML/data teams building movement-understanding AI, plus the labeling
+  vendors who serve them. The demo domains are vivid instances, not the whole
+  market.
+- **Market:** video training data for human-movement AI — spanning accessibility
+  (sign language), fitness, rehab, sports performance, and ergonomics. Dance and
+  sign language are the demo; the platform is the product.
+- **Why this stack:** v0/Vercel for fast, polished adaptive frontends; the AI SDK
+  for structured generation; Aurora PostgreSQL as the relational source of truth
+  for multi-domain workflow state.
+
+### Honest guardrails for the pitch
+- Frame sign language as an **annotation workspace for sign datasets**, not a
+  translator or recognizer. Do not claim to capture full linguistic nuance
+  (non-manual markers, simultaneity, grammar).
+- Don't oversell either niche as a standalone market; the platform is the TAM.
+
+## 5. Product Scope (Tiered — Build in This Order)
+
+Scope is organized into three tiers. Ship the **Core spine** completely before
+touching Should-have. Treat Nice-to-have as bonus only if the spine is deployed
+and polished. When in doubt, cut — a small thing done flawlessly beats a broad
+thing half-working.
+
+### Tier 1 — Core spine (must ship; this is the demo)
+1. Generative schema: plain-English description -> Zod-validated `WorkspaceSchema`
+   -> persisted as an immutable version in Aurora.
+2. Deterministic renderer: one renderer + the timeline modules that turn a schema
+   into a working labeling studio.
+3. Two domains from the same engine: **bachata** (beat grid) and **sign language**
+   (gloss segments). This is the adaptivity AHA.
+4. Annotation save/submit to Aurora.
+5. **pgvector semantic retrieval:** "find similar clips" across the dataset
+   (embeddings computed offline at seed time). This is the Aurora differentiator.
+6. JSONL export of annotations.
+7. Deployed and working on Vercel against Aurora.
+
+### Tier 2 — Should-have (add only after the spine is deployed)
+- Review/approve flow + audit events.
+- AI pre-labeling (multimodal `Output.array` + confidence highlights).
+- CSV + project-JSON export in addition to JSONL.
+
+### Tier 3 — Nice-to-have (bonus)
+- Dashboard metrics (counts, acceptance rate).
+- A workspace copilot that edits the schema via tool calls.
+
+### Explicitly cut from build scope
+- Physical therapy, warehouse safety, and other domains (roadmap slide only).
+- Multi-tenant orgs/roles, real-time collaboration, payments.
+- Live media processing (ffmpeg/Remotion/Python) in the cloud.
+- Runtime execution of AI-generated UI code.
+
+### Demo Domains (exactly two)
+1. **Bachata dance** — flagship. Beat-grid timeline, phrase counts, movement
+   labels, entry/exit state. Reuses existing beat/cycle logic.
+2. **Sign language** — contrast domain. Gloss-segment timeline, sign boundaries,
+   handshape/non-manual fields. Proves the engine is not hardcoded.
+
+Two domains is enough to prove adaptivity. Do not build a third.
+
+## 6. The Generative-UI Approach (Technical Centerpiece)
+
+Verified against current Vercel AI SDK docs (AI SDK 5/6 era). Structured
+generation is standardized on the `Output` API passed to `generateText` /
+`streamText`: `Output.object({ schema })`, `Output.array({ element })`, with
+`partialOutputStream` / `elementStream` for streaming and `useObject` on the
+client. (`generateObject` / `streamObject` still exist as older equivalents.)
+Sources: Vercel "Generating Structured Data" and "useObject" docs. Pin exact
+`ai` / `@ai-sdk/react` versions and re-confirm signatures on build day — the API
+moves fast.
+
+### Principle
+Every AI call returns a **Zod-validated structured object**. That object is
+persisted to Aurora and read by a **deterministic renderer** that maps a fixed
+set of field types and timeline modes to trusted, hand-built components. The AI
+chooses configuration; it never emits executable UI.
+
+### The workspace config schema (the contract)
+
+```ts
+// lib/schemas/workspace.ts
+import { z } from 'zod';
+
+export const FieldType = z.enum([
+  'text', 'textarea', 'select', 'multiselect', 'checkbox',
+  'radio', 'slider', 'number', 'time_range', 'timeline_marker',
+]);
+
+export const LabelField = z.object({
+  key: z.string().regex(/^[a-z0-9_]+$/),
+  label: z.string(),
+  help: z.string().nullable(),
+  type: FieldType,
+  required: z.boolean().default(false),
+  options: z.array(z.string()).nullable(),   // select/radio/multiselect
+  min: z.number().nullable(),                // slider/number
+  max: z.number().nullable(),
+  group: z.string().nullable(),              // UI section
+});
+
+// The enum that drives the on-screen AHA: different timeline per domain.
+export const TimelineMode = z.enum(['beat_grid', 'phase_rep', 'gloss_segments']);
+
+export const WorkspaceSchema = z.object({
+  domain: z.string(),
+  workspaceName: z.string(),
+  timelineMode: TimelineMode,
+  fields: z.array(LabelField).min(3).max(24),
+  workflowStages: z.array(z.string()),
+});
+
+export type WorkspaceSchema = z.infer<typeof WorkspaceSchema>;
+```
+
+### Schema generation: description -> validated config
+
+```ts
+// app/api/generate-schema/route.ts
+import { generateText, Output } from 'ai';
+import { WorkspaceSchema } from '@/lib/schemas/workspace';
+
+export async function POST(req: Request) {
+  const { description } = await req.json();
+  const { output } = await generateText({
+    model: 'openai/gpt-4.1',
+    output: Output.object({ schema: WorkspaceSchema }),
+    system:
+      'You design video-labeling workspaces. Choose timelineMode: beat_grid for ' +
+      'music/dance, phase_rep for reps/exercises, gloss_segments for sign ' +
+      'language. Only use the allowed field types.',
+    prompt: `Dataset description: ${description}`,
+  });
+  // output is schema-validated -> persist as an immutable schema version in Aurora.
+  return Response.json(output);
+}
+```
+
+### Streaming wizard ("watch the studio assemble itself")
+
+```tsx
+// app/wizard/page.tsx
+'use client';
+import { experimental_useObject as useObject } from '@ai-sdk/react';
+import { WorkspaceSchema } from '@/lib/schemas/workspace';
+
+export default function Wizard() {
+  const { object, submit } = useObject({
+    api: '/api/generate-schema-stream', // streamText + Output.object
+    schema: WorkspaceSchema,
+  });
+  return (
+    <>
+      <button onClick={() => submit({ description: 'Label ASL clips for gloss segmentation' })}>
+        Generate workspace
+      </button>
+      {object?.fields?.map((f, i) => f && <FieldPreview key={i} field={f} />)}
+    </>
+  );
+}
+```
+
+### AI pre-labeling: multimodal frames + schema -> values with confidence
+
+(Tier 2 — add after the core spine ships.)
+
+```ts
+// app/api/pre-label/route.ts
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
+
+const FieldDraft = z.object({
+  key: z.string(),
+  value: z.string(),
+  confidence: z.number().min(0).max(1),
+  evidence: z.string(),
+});
+
+export async function POST(req: Request) {
+  const { schema, frameUrls } = await req.json();
+  const { output } = await generateText({
+    model: 'openai/gpt-4.1',
+    output: Output.array({ element: FieldDraft }),
+    system: 'Return one entry per field key. Use low confidence when ambiguous.',
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'text', text: `Fields:\n${JSON.stringify(schema.fields)}` },
+        ...frameUrls.map((url: string) => ({ type: 'image' as const, image: new URL(url) })),
+      ],
+    }],
+  });
+  // validate keys against schema.fields; store as annotation source='ai_draft'
+  return Response.json(output);
+}
+```
+
+### Deterministic renderer (the trust boundary)
+
+```tsx
+// components/FieldRenderer.tsx — a switch over trusted types, nothing executed.
+switch (field.type) {
+  case 'select':          return <SelectField .../>;
+  case 'slider':          return <SliderField .../>;
+  case 'timeline_marker': return <TimelineMarkerField .../>;
+  // text, textarea, checkbox, radio, multiselect, number, time_range...
+  default:                return <TextField .../>;
+}
+
+// Timeline module picks itself from the enum:
+function TimelineForMode({ mode }) {
+  if (mode === 'beat_grid')      return <BeatGridTimeline />;   // reuse cycle-builder data
+  if (mode === 'phase_rep')      return <PhaseRepTimeline />;
+  return <GlossSegmentTimeline />;                              // sign language
+}
+```
+
+### Why this scores
+- **Technical Implementation:** Zod-validated output -> immutable versioned schema
+  rows in Aurora -> deterministic renderer. Deliberate, not surface-level.
+- **Design / generative UI:** the streamed wizard visibly builds a workspace, and
+  `timelineMode` yields a genuinely different studio per domain.
+- **Safe:** AI output is config feeding a trusted component switch; nothing is
+  executed at runtime.
+
+## 6A. Semantic Retrieval with pgvector (Aurora Differentiator)
+
+This is the one strategic addition borrowed from the DirectoryCMS analysis. It
+closes AdaptiveLabel's only real weakness — under-using Aurora's headline
+capabilities — for a small, contained amount of work. It is Tier 1 (core).
+
+### What it does
+Each labeled clip gets a text representation (domain + move/gloss + key field
+values + summary). That text is embedded once and stored as a `vector` on the
+clip. "Find similar clips" runs a cosine-distance query in Aurora, returning the
+nearest movements across the whole dataset — including cross-domain matches,
+which makes a memorable demo beat.
+
+### Why it fits cleanly
+- Embeddings are computed **offline at seed time** (and on annotation submit if
+  time allows), never in the request path — so it stays fast and serverless-safe.
+- It uses Aurora-native pgvector + a real similarity index, which is exactly the
+  "deliberate query design" judges reward.
+- It needs no new infrastructure beyond the `vector` extension.
+
+### Schema additions
+
+```sql
+create extension if not exists vector;
+
+alter table clips
+  add column search_text text,
+  add column embedding vector(1536);
+
+-- Build the index after seeding enough rows.
+create index clips_embedding_idx
+  on clips using hnsw (embedding vector_cosine_ops);
+```
+
+### Embedding at seed time (AI SDK)
+
+```ts
+import { embedMany } from 'ai';
+
+const { embeddings } = await embedMany({
+  model: 'openai/text-embedding-3-small', // 1536 dims
+  values: clips.map(c => c.searchText),
+});
+// UPDATE clips SET embedding = $1 WHERE id = $2  (per row)
+```
+
+### "Find similar clips" query
+
+```sql
+select id, title, domain, 1 - (embedding <=> $1) as similarity
+from clips
+where project_id = $2 or $3 = true        -- allow cross-domain search
+order by embedding <=> $1                   -- cosine distance, HNSW-indexed
+limit 8;
+```
+
+Confirm the exact embedding model id and dimension against your provider/gateway
+on build day, and match the `vector(N)` dimension to the model.
+
+## 7. Target Architecture
+
+- **Vercel Next.js app:** landing, schema-generation wizard, labeling workspace,
+  review queue, export center.
+- **Aurora PostgreSQL:** source of truth for projects, schema versions, fields,
+  media/clip metadata, tasks, annotations, reviews, audit events, exports. Uses
+  **pgvector** for semantic clip retrieval.
+- **Object storage (S3) or static assets:** demo clips, thumbnails, and
+  pre-computed beat/segment data.
+- **Vercel AI SDK:** schema generation (`Output.object`), streaming wizard
+  (`useObject`), offline embeddings (`embedMany`), multimodal pre-labeling
+  (`Output.array`, Tier 2).
+- **No cloud worker / no ffmpeg / no Python at runtime.** All media-derived data
+  and embeddings are pre-computed offline and seeded.
+
+### Request flow
+1. User describes a dataset in the wizard.
+2. API route calls the AI SDK -> validated `WorkspaceSchema`.
+3. Schema persisted as an immutable version (schema + fields) in Aurora.
+4. Renderer reads the active schema and renders the workspace + timeline module.
+5. Annotations save/submit to Aurora; reviewer approves/rejects; audit rows written.
+6. Export job reads approved annotations and produces JSONL/CSV/JSON.
+
+## 8. Data Model (Trimmed for MVP)
+
+Keep the relational model deliberate — it is the Technical Implementation story.
+Minimum tables for the spine:
+
+- `projects` — id, name, domain, status, created_at.
+- `label_schemas` — id, project_id, version, name, timeline_mode, status,
+  generation_prompt, created_at, activated_at. (Versions are immutable.)
+- `label_fields` — id, schema_id, key, label, help, field_type, required,
+  options_json, min, max, group, order_index.
+- `media_assets` — id, project_id, filename, storage_key, duration_seconds, fps,
+  width, height, metadata_json.
+- `clips` — id, project_id, media_asset_id, clip_index, start_frame, end_frame,
+  start_seconds, end_seconds, metadata_json (beat grid or gloss markers seeded),
+  search_text, embedding `vector(1536)` (pgvector; see Section 6A).
+- `labeling_tasks` — id, project_id, clip_id, schema_id, status, created_at.
+- `annotations` — id, task_id, schema_id, source (human|ai_draft), status,
+  values_json, confidence_json, validation_json, created_at, updated_at.
+- `annotation_reviews` — id, annotation_id, decision, notes, created_at.
+- `audit_events` — id, project_id, actor, event_type, entity_type, entity_id,
+  before_json, after_json, created_at.
+- `exports` — id, project_id, format, status, storage_key, filters_json,
+  created_at, completed_at.
+
+Optional if time allows: `organizations`, `users`, roles. Not required for the
+demo.
+
+## 9. Domain Presets
+
+### Bachata (timeline_mode = beat_grid) — flagship, reuses existing logic
+UI: video player, beat markers, 8/16/32-count phrase display, clip boundaries,
+entry/exit sections.
+
+Fields: move_name, move_family, style, difficulty, energy_level, entry_position,
+exit_position, rotation_direction, travel_direction, visibility_score,
+stitchability, tags.
+
+### Sign Language (timeline_mode = gloss_segments) — contrast domain
+UI: video player, sign (gloss) segment markers, phrase/sentence grouping,
+handshape and non-manual marker fields.
+
+Fields: gloss, sign_type (lexical | fingerspelling | classifier | pointing),
+dominant_hand, two_handed (bool), handshape, movement_path, non_manual_marker
+(e.g., brow_raise, head_tilt, mouth_morpheme), phrase_index, clarity_score,
+review_required, tags.
+
+Both presets are produced by the same generation pipeline and rendered by the
+same renderer; only the config (and therefore the timeline module + fields)
+differs.
+
+## 10. Code Reuse Plan
+
+The existing Astro/local app is a source of domain logic and pre-computed data,
+not a foundation. Build the new Next.js app fresh and transplant the pure pieces.
+
+**Transplant (pure TypeScript, ports directly):**
+- `src/services/cycle-builder.ts` — beat -> cycle -> phrase grouping (8/16/32).
+- `src/services/clip-manager.ts` — clip create/merge/split from cycles.
+- `src/services/beat-marker-utils.ts` — beat marker recompute.
+- `src/services/slug-utils.ts`, `url-validator.ts` — generic utilities.
+- `src/types/index.ts`, `enums.ts` — seed for the bachata preset.
+
+**Reuse offline (do not run on Vercel):**
+- `analyzer/` Python (`beat_this`) — run locally once on demo clips to produce
+  beat grids; seed the JSON into Aurora `clips.metadata_json`.
+
+**Do not port:**
+- ingestion (`yt-dlp`/ffprobe), audio-analysis bridge, clip-extraction (ffmpeg),
+  export-service (Remotion), local `project-service`/`app-state`, all `.astro`
+  pages/routes and the Remotion player.
+
+**Rebuild new (this is the actual product):**
+- Generic schema-driven validator (the existing `schema-validator.ts` is
+  hardcoded to bachata fields — reuse its patterns, not its content).
+- The deterministic renderer and the three timeline modules.
+
+Net reuse: roughly a day or two saved on beat math and field vocabulary, not a
+head start on the platform.
+
+## 11. Six-Day Execution Plan
+
+Deadline June 29, 5pm PT. Treat each "day" as a focused work block; keep a buffer.
+
+**Day 0 (now, < 2 hours):**
+- Request AWS + v0 credits (form closes June 26, 12pm PT).
+- Provision Aurora PostgreSQL; create a Vercel project; confirm DB connectivity.
+- Scaffold Next.js app with v0 (dashboard + wizard + workspace shells).
+
+**Day 1 — Foundation + data model:**
+- Enable the `vector` extension; run migrations for the Section 8 tables.
+- DB connection layer; seed one bachata project + clips (beat data from analyzer).
+- Deploy the shell to Vercel; confirm it reads from Aurora in production.
+
+**Day 2 — Generation + renderer:**
+- `WorkspaceSchema` Zod contract; `/api/generate-schema` (+ streaming variant).
+- Deterministic `FieldRenderer` + the three timeline modules (beat_grid first).
+- Wizard: description -> streamed schema -> activate -> persisted version.
+
+**Day 3 — Labeling + semantic retrieval + export (core spine):**
+- Workspace renders the active schema; annotation save/submit to Aurora.
+- Generic validator (required/enum/range) before submit.
+- pgvector: compute clip embeddings offline at seed, build the HNSW index, and
+  ship the "find similar clips" query + UI (Section 6A).
+- JSONL export of annotations.
+
+**Day 4 — Second domain + Tier 2 + polish:**
+- Seed the sign-language project (gloss segments) and generate its schema.
+- Confirm the same renderer produces the gloss timeline (the AHA), and that
+  semantic search returns a cross-domain match.
+- Tier 2 if time: review/approve + audit; AI pre-labeling with confidence.
+- UI polish: empty/loading/error states, spacing, cohesion.
+
+**Day 5 — Submission assets:**
+- Architecture diagram; AWS DB proof screenshot; Vercel project link + Team ID.
+- Record the < 3-minute demo video (script in Section 12).
+- Write the Devpost description (Section 13).
+- Publish one content piece for the +0.6 bonus.
+
+**Buffer:** expect to spend it on deploy issues and the video. Protect the
+working deployed link above all.
+
+## 12. Demo Script (target 2:45)
+
+- **0:00–0:20 Problem.** Generic labeling tools force every movement domain into
+  the same UI. A dance dataset and a sign-language dataset should not share one
+  interface.
+- **0:20–0:45 Generate a workspace.** Type: "Label bachata clips for movement
+  retrieval." The wizard streams a schema into view; activate it. Note it persists
+  to Aurora as an immutable version.
+- **0:45–1:10 Bachata labeling.** Beat-grid timeline, phrase counts, movement
+  labels, entry/exit.
+- **1:10–1:35 Prove adaptivity.** Switch to the sign-language project. Same app,
+  same renderer, but a gloss-segment timeline and sign-specific fields — generated
+  from a DB schema, not a separate hardcoded app. This is the AHA.
+- **1:35–2:05 Semantic retrieval (Aurora).** On a clip, click "Find similar
+  movements." pgvector returns the nearest clips across the dataset — including a
+  cross-domain match. Say explicitly: this is a vector similarity query in Aurora.
+- **2:05–2:25 Export.** Export annotations as ML-ready JSONL; download the
+  artifact. (If review shipped, show one approve first.)
+- **2:25–2:45 Architecture.** Vercel/v0 frontend, AI SDK structured generation,
+  Aurora PostgreSQL + pgvector as the schema/workflow/retrieval backbone. Name
+  Aurora explicitly.
+
+Footage: IP-clean only (see Section 14). Record bachata clips you own or CC
+footage; record sign-language clips yourself. No copyrighted music.
+
+## 13. Devpost Positioning
+
+**Tagline:** AI-generated, schema-driven labeling workspaces for human-movement
+video datasets.
+
+**Short description:** AdaptiveLabel lets teams create a custom video labeling
+workspace from a plain-English description. The Vercel AI SDK generates a
+validated schema (config, not code), which a deterministic renderer turns into a
+task-specific labeling UI with the right timeline — a musical beat grid for
+bachata, gloss segments for sign language. Labeled clips are embedded and stored
+in Aurora with pgvector, enabling semantic "find similar movements" retrieval
+across the dataset. Annotations export as ML-ready datasets. Aurora PostgreSQL is
+the source of truth for schema versions, tasks, annotations, exports, and vector
+search; the frontend is deployed on Vercel.
+
+**Problem:** Teams building movement-understanding AI need labeled video, but
+generic tools force every domain into one interface and handle time/rhythm-aware
+labeling poorly.
+
+**Solution:** A workspace that adapts to the movement domain, generated from a
+description and backed by one production-grade relational model with vector search.
+
+**Why this stack:** v0/Vercel for fast, polished adaptive frontends; the AI SDK
+for Zod-validated structured generation and embeddings; Aurora PostgreSQL +
+pgvector for durable, multi-domain workflow state and semantic retrieval.
+
+**Roadmap (talking point, not built):** the same engine extends to physical
+therapy, sports performance, workplace ergonomics, and other movement domains.
+
+## 14. IP / Footage Compliance (Do Not Skip)
+
+The rules prohibit copyrighted footage/music and third-party trademarks in the
+submission video without permission.
+
+- The existing bachata clips are downloaded YouTube videos set to copyrighted
+  music. They are fine for local development but **must not appear in the demo
+  video**.
+- For the video: use clips you own, Creative Commons / Pexels footage, or
+  self-recorded material; record sign-language clips yourself; use royalty-free or
+  no music.
+- Avoid brand logos and trademarks on screen.
+
+## 15. Technical Risks and Mitigations
+
+- **Scope too large for the window.** Mitigation: build only the two-domain spine;
+  seed all media-derived data; cut everything in Section 5's "cut" list.
+- **Media processing fails in cloud.** Mitigation: no ffmpeg/Python/Remotion at
+  runtime; pre-compute beat grids and gloss markers offline and seed them.
+- **AI output unreliable.** Mitigation: every output is Zod-validated; invalid
+  output is rejected before persistence; deterministic preset fallback for the
+  demo so it never depends on a live model call succeeding on stage.
+- **Embeddings slow or rate-limited in the request path.** Mitigation: compute all
+  embeddings offline at seed time; never embed during a page request; build the
+  vector index after seeding; match `vector(N)` to the model's dimension.
+- **"v0 looks superficial."** Mitigation: lead with the Aurora data model and the
+  config-driven renderer; show that AI produces validated config, not live code.
+- **Looks like a Label Studio clone.** Mitigation: lead with adaptive movement
+  workspaces and the on-screen timeline switch between domains.
+- **AI SDK API drift.** Mitigation: pin `ai` / `@ai-sdk/react` versions and
+  re-confirm `Output` / `useObject` signatures against current docs on build day.
+- **Overclaiming on sign language.** Mitigation: position strictly as a dataset
+  annotation workspace, not a translator/recognizer.
+
+## 16. Submission Checklist
+
+- [ ] AWS + v0 credits requested (form by June 26, 12pm PT).
+- [ ] Aurora PostgreSQL provisioned and used as primary backend (with pgvector).
+- [ ] Next.js app deployed and working on Vercel (public link).
+- [ ] Vercel Project Link + Vercel Team ID.
 - [ ] AWS Database proof screenshot.
-- [ ] Architecture diagram.
-- [ ] Less than 3-minute demo video.
-- [ ] Devpost text description naming AWS Database used.
-- [ ] Public repo or accessible source, depending on submission preference.
-- [ ] License file if repo is public.
-- [ ] Optional public build article for bonus points.
+- [ ] Architecture diagram (Vercel/v0 + AI SDK + Aurora + pgvector + storage).
+- [ ] Two domains demonstrated from one schema engine (bachata + sign language).
+- [ ] Core spine functional end to end: schema generation, labeling, semantic
+      "find similar clips" (pgvector), and JSONL export.
+- [ ] < 3-minute demo video, IP-clean footage, names Aurora explicitly.
+- [ ] Devpost text description naming the AWS database used.
+- [ ] One published content piece for the +0.6 bonus (#H0Hackathon).
+- [ ] Public repo + license if submitting source.
 
-## 24. Recommended Next Steps
+## 17. Recommended Next Steps
 
-1. Decide whether to build inside this repo or create a new `adaptive-label` Next.js app.
-2. Lock Aurora PostgreSQL as the database.
-3. Generate the first v0 UI for the dashboard, project wizard, and labeling workspace.
-4. Create database migrations for the core schema.
-5. Seed three demo projects and schemas.
-6. Build the schema renderer.
-7. Add annotation submit/review/export.
-8. Integrate the bachata beat-aware experience as the flagship domain demo.
-9. Deploy to Vercel.
-10. Record the demo and prepare Devpost materials.
-
+1. Request credits and provision Aurora + a Vercel project today.
+2. Scaffold the Next.js app with v0 (dashboard, wizard, workspace shells).
+3. Create the Section 8 migrations and seed the bachata project from analyzer
+   output.
+4. Implement the `WorkspaceSchema` contract, generation route, and deterministic
+   renderer (beat_grid first).
+5. Add labeling + JSONL export, and the pgvector "find similar clips" retrieval
+   (embeddings seeded offline) — this completes the core spine.
+6. Seed and generate the sign-language domain; confirm the renderer adapts and
+   semantic search returns a cross-domain match.
+7. Tier 2 if time: review/approve + audit, then AI pre-labeling with confidence.
+8. Deploy, record the demo, prepare Devpost assets and the content piece.

@@ -1,0 +1,476 @@
+{
+  "projectSlug": "sign_language",
+  "timelineMode": "gloss_segments",
+  "fps": 30,
+  "mediaAssets": [
+    {
+      "key": "sign_media_001",
+      "filename": "sign_demo_001.mp4",
+      "storageKey": "demo-media/sign-language/sign_demo_001.mp4",
+      "durationSeconds": 4,
+      "fps": 30,
+      "width": 1280,
+      "height": 720,
+      "metadata": {
+        "ipClean": true,
+        "source": "original-demo-recording",
+        "note": "Placeholder reference; record/license original signing footage before demo."
+      }
+    },
+    {
+      "key": "sign_media_002",
+      "filename": "sign_demo_002.mp4",
+      "storageKey": "demo-media/sign-language/sign_demo_002.mp4",
+      "durationSeconds": 5,
+      "fps": 30,
+      "width": 1280,
+      "height": 720,
+      "metadata": {
+        "ipClean": true,
+        "source": "original-demo-recording",
+        "note": "Placeholder reference; record/license original signing footage before demo."
+      }
+    },
+    {
+      "key": "sign_media_003",
+      "filename": "sign_demo_003.mp4",
+      "storageKey": "demo-media/sign-language/sign_demo_003.mp4",
+      "durationSeconds": 4.5,
+      "fps": 30,
+      "width": 1280,
+      "height": 720,
+      "metadata": {
+        "ipClean": true,
+        "source": "original-demo-recording",
+        "note": "Placeholder reference; record/license original signing footage before demo."
+      }
+    },
+    {
+      "key": "sign_media_004",
+      "filename": "sign_demo_004.mp4",
+      "storageKey": "demo-media/sign-language/sign_demo_004.mp4",
+      "durationSeconds": 4,
+      "fps": 30,
+      "width": 1280,
+      "height": 720,
+      "metadata": {
+        "ipClean": true,
+        "source": "original-demo-recording",
+        "note": "Placeholder reference; record/license original signing footage before demo."
+      }
+    }
+  ],
+  "clips": [
+    {
+      "clipIndex": 1,
+      "title": "Greeting — nice to meet you",
+      "domain": "sign_language",
+      "mediaAssetKey": "sign_media_001",
+      "startSeconds": 0,
+      "endSeconds": 4,
+      "startFrame": 0,
+      "endFrame": 120,
+      "searchAttributes": {
+        "gloss": "HELLO NICE MEET-YOU",
+        "sign_type": [
+          "lexical"
+        ],
+        "dominant_hand": [
+          "right",
+          "both"
+        ],
+        "handshapes": [
+          "flat",
+          "index"
+        ],
+        "two_handed": true,
+        "non_manual_markers": "brow raise, smile; neutral; eye gaze to addressee"
+      },
+      "metadata": {
+        "timelineMode": "gloss_segments",
+        "glossSegments": [
+          {
+            "index": 0,
+            "gloss": "HELLO",
+            "sign_type": "lexical",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "flat"
+            ],
+            "non_manual_markers": "brow raise, smile",
+            "clarity": 5,
+            "startSeconds": 0.2,
+            "endSeconds": 1,
+            "phrase": 1,
+            "startFrame": 6,
+            "endFrame": 30
+          },
+          {
+            "index": 1,
+            "gloss": "NICE",
+            "sign_type": "lexical",
+            "dominant_hand": "right",
+            "two_handed": true,
+            "handshapes": [
+              "flat"
+            ],
+            "non_manual_markers": "neutral",
+            "clarity": 4,
+            "startSeconds": 1.1,
+            "endSeconds": 2,
+            "phrase": 1,
+            "startFrame": 33,
+            "endFrame": 60
+          },
+          {
+            "index": 2,
+            "gloss": "MEET-YOU",
+            "sign_type": "lexical",
+            "dominant_hand": "both",
+            "two_handed": true,
+            "handshapes": [
+              "index"
+            ],
+            "non_manual_markers": "eye gaze to addressee",
+            "clarity": 5,
+            "startSeconds": 2.1,
+            "endSeconds": 3.4,
+            "phrase": 1,
+            "startFrame": 63,
+            "endFrame": 102
+          }
+        ],
+        "phrases": [
+          {
+            "phrase": 1,
+            "label": "HELLO NICE MEET-YOU",
+            "startSeconds": 0.2,
+            "endSeconds": 3.4,
+            "glossIndices": [
+              0,
+              1,
+              2
+            ]
+          }
+        ],
+        "provenance": "hand-authored"
+      }
+    },
+    {
+      "clipIndex": 2,
+      "title": "Introduction — my name",
+      "domain": "sign_language",
+      "mediaAssetKey": "sign_media_002",
+      "startSeconds": 0,
+      "endSeconds": 5,
+      "startFrame": 0,
+      "endFrame": 150,
+      "searchAttributes": {
+        "gloss": "MY NAME f-i-n",
+        "sign_type": [
+          "pointing",
+          "lexical",
+          "fingerspelled"
+        ],
+        "dominant_hand": [
+          "right",
+          "both"
+        ],
+        "handshapes": [
+          "flat",
+          "index",
+          "open_8"
+        ],
+        "two_handed": true,
+        "non_manual_markers": "neutral; neutral; mouthing; mouthing; mouthing"
+      },
+      "metadata": {
+        "timelineMode": "gloss_segments",
+        "glossSegments": [
+          {
+            "index": 0,
+            "gloss": "MY",
+            "sign_type": "pointing",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "flat"
+            ],
+            "non_manual_markers": "neutral",
+            "clarity": 5,
+            "startSeconds": 0.2,
+            "endSeconds": 0.9,
+            "phrase": 1,
+            "startFrame": 6,
+            "endFrame": 27
+          },
+          {
+            "index": 1,
+            "gloss": "NAME",
+            "sign_type": "lexical",
+            "dominant_hand": "both",
+            "two_handed": true,
+            "handshapes": [
+              "index"
+            ],
+            "non_manual_markers": "neutral",
+            "clarity": 5,
+            "startSeconds": 1,
+            "endSeconds": 1.9,
+            "phrase": 1,
+            "startFrame": 30,
+            "endFrame": 57
+          },
+          {
+            "index": 2,
+            "gloss": "fs-F",
+            "sign_type": "fingerspelled",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "open_8"
+            ],
+            "non_manual_markers": "mouthing",
+            "clarity": 4,
+            "startSeconds": 2.1,
+            "endSeconds": 2.6,
+            "phrase": 2,
+            "startFrame": 63,
+            "endFrame": 78
+          },
+          {
+            "index": 3,
+            "gloss": "fs-I",
+            "sign_type": "fingerspelled",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "index"
+            ],
+            "non_manual_markers": "mouthing",
+            "clarity": 4,
+            "startSeconds": 2.6,
+            "endSeconds": 3.1,
+            "phrase": 2,
+            "startFrame": 78,
+            "endFrame": 93
+          },
+          {
+            "index": 4,
+            "gloss": "fs-N",
+            "sign_type": "fingerspelled",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "index"
+            ],
+            "non_manual_markers": "mouthing",
+            "clarity": 3,
+            "startSeconds": 3.1,
+            "endSeconds": 3.7,
+            "phrase": 2,
+            "startFrame": 93,
+            "endFrame": 111
+          }
+        ],
+        "phrases": [
+          {
+            "phrase": 1,
+            "label": "MY NAME",
+            "startSeconds": 0.2,
+            "endSeconds": 1.9,
+            "glossIndices": [
+              0,
+              1
+            ]
+          },
+          {
+            "phrase": 2,
+            "label": "fs-F fs-I fs-N",
+            "startSeconds": 2.1,
+            "endSeconds": 3.7,
+            "glossIndices": [
+              2,
+              3,
+              4
+            ]
+          }
+        ],
+        "provenance": "hand-authored"
+      }
+    },
+    {
+      "clipIndex": 3,
+      "title": "Farewell — thanks, see you later",
+      "domain": "sign_language",
+      "mediaAssetKey": "sign_media_003",
+      "startSeconds": 0,
+      "endSeconds": 4.5,
+      "startFrame": 0,
+      "endFrame": 135,
+      "searchAttributes": {
+        "gloss": "THANK-YOU SEE-YOU LATER",
+        "sign_type": [
+          "lexical"
+        ],
+        "dominant_hand": [
+          "right"
+        ],
+        "handshapes": [
+          "flat",
+          "index"
+        ],
+        "two_handed": false,
+        "non_manual_markers": "nod, smile; eye gaze; neutral"
+      },
+      "metadata": {
+        "timelineMode": "gloss_segments",
+        "glossSegments": [
+          {
+            "index": 0,
+            "gloss": "THANK-YOU",
+            "sign_type": "lexical",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "flat"
+            ],
+            "non_manual_markers": "nod, smile",
+            "clarity": 5,
+            "startSeconds": 0.2,
+            "endSeconds": 1.2,
+            "phrase": 1,
+            "startFrame": 6,
+            "endFrame": 36
+          },
+          {
+            "index": 1,
+            "gloss": "SEE-YOU",
+            "sign_type": "lexical",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "index"
+            ],
+            "non_manual_markers": "eye gaze",
+            "clarity": 4,
+            "startSeconds": 1.4,
+            "endSeconds": 2.4,
+            "phrase": 1,
+            "startFrame": 42,
+            "endFrame": 72
+          },
+          {
+            "index": 2,
+            "gloss": "LATER",
+            "sign_type": "lexical",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "index"
+            ],
+            "non_manual_markers": "neutral",
+            "clarity": 4,
+            "startSeconds": 2.6,
+            "endSeconds": 3.8,
+            "phrase": 1,
+            "startFrame": 78,
+            "endFrame": 114
+          }
+        ],
+        "phrases": [
+          {
+            "phrase": 1,
+            "label": "THANK-YOU SEE-YOU LATER",
+            "startSeconds": 0.2,
+            "endSeconds": 3.8,
+            "glossIndices": [
+              0,
+              1,
+              2
+            ]
+          }
+        ],
+        "provenance": "hand-authored"
+      }
+    },
+    {
+      "clipIndex": 4,
+      "title": "Question — where is the bathroom",
+      "domain": "sign_language",
+      "mediaAssetKey": "sign_media_004",
+      "startSeconds": 0,
+      "endSeconds": 4,
+      "startFrame": 0,
+      "endFrame": 120,
+      "searchAttributes": {
+        "gloss": "BATHROOM WHERE",
+        "sign_type": [
+          "lexical"
+        ],
+        "dominant_hand": [
+          "right"
+        ],
+        "handshapes": [
+          "fist",
+          "index"
+        ],
+        "two_handed": false,
+        "non_manual_markers": "neutral; brow furrow (wh-question), head tilt"
+      },
+      "metadata": {
+        "timelineMode": "gloss_segments",
+        "glossSegments": [
+          {
+            "index": 0,
+            "gloss": "BATHROOM",
+            "sign_type": "lexical",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "fist"
+            ],
+            "non_manual_markers": "neutral",
+            "clarity": 5,
+            "startSeconds": 0.2,
+            "endSeconds": 1.3,
+            "phrase": 1,
+            "startFrame": 6,
+            "endFrame": 39
+          },
+          {
+            "index": 1,
+            "gloss": "WHERE",
+            "sign_type": "lexical",
+            "dominant_hand": "right",
+            "two_handed": false,
+            "handshapes": [
+              "index"
+            ],
+            "non_manual_markers": "brow furrow (wh-question), head tilt",
+            "clarity": 5,
+            "startSeconds": 1.5,
+            "endSeconds": 3.2,
+            "phrase": 1,
+            "startFrame": 45,
+            "endFrame": 96
+          }
+        ],
+        "phrases": [
+          {
+            "phrase": 1,
+            "label": "BATHROOM WHERE",
+            "startSeconds": 0.2,
+            "endSeconds": 3.2,
+            "glossIndices": [
+              0,
+              1
+            ]
+          }
+        ],
+        "provenance": "hand-authored"
+      }
+    }
+  ]
+}

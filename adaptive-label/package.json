@@ -1,0 +1,51 @@
+{
+  "name": "adaptive-label",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "4.0.0",
+    "@ai-sdk/react": "4.0.0",
+    "@remotion/bundler": "4.0.483",
+    "@remotion/media-utils": "4.0.483",
+    "@remotion/player": "4.0.483",
+    "@remotion/renderer": "4.0.483",
+    "ai": "7.0.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "lucide-react": "1.21.0",
+    "next": "16.2.9",
+    "pg": "8.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "remotion": "4.0.483",
+    "tailwind-merge": "3.6.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "20.19.43",
+    "@types/pg": "8.20.0",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.3",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.9",
+    "fast-check": "4.8.0",
+    "jsdom": "29.1.1",
+    "tailwindcss": "4.3.1",
+    "tsx": "4.20.3",
+    "typescript": "5.9.3",
+    "vitest": "4.1.9"
+  }
+}
