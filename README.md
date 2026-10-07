@@ -14,7 +14,7 @@ The app downloads a source video, extracts audio, runs a Python `beat_this` anal
 - Provides a review UI with clip navigation, preview, discard, merge, split, and boundary updates.
 - Captures rich annotation data based on the project schema.
 - Auto-saves working state to disk and supports project import/export.
-- Exports single clips or batches to MP4 through Remotion.
+- Exports single clips or batches to MP4 with ffmpeg and writes annotation JSON sidecars.
 
 ## Stack
 
@@ -71,7 +71,7 @@ Those results are then stored on the source record and used to build cycle hiera
 The review screen combines:
 
 - clip list/grid browsing
-- Remotion-based playback
+- HTML video playback with optional beat and energy overlays
 - clip selection and navigation
 - discard, split, and merge actions
 - annotation form sections for identity, phrasing, trim, motion, camera, and quality
@@ -96,7 +96,6 @@ The server uses the repo root as its project directory, so run the app from this
 │   ├── components/          # Review UI and annotation form components
 │   ├── layouts/             # Astro layout shell
 │   ├── pages/               # Astro pages and API routes
-│   ├── remotion/            # Remotion compositions for clip preview/export
 │   ├── services/            # Ingestion, analysis, state, validation, export
 │   ├── tests/               # Property and integration tests
 │   └── types/               # Project schema and enums
@@ -195,7 +194,6 @@ Integration tests verify that subprocess-based dependencies are wired correctly 
 
 - `uv run yt-dlp` (after `uv sync`)
 - `uv` + Python analyzer
-- Remotion
 
 Run them only when `uv` and `ffmpeg` are installed and Python deps are synced (`uv sync`):
 
@@ -217,7 +215,7 @@ INTEGRATION=1 npx vitest run src/tests/integration/
 - `GET /api/clips/:id`: fetch a single clip
 - `PUT /api/clips/:id/annotation`: update annotation fields
 - `PUT /api/clips/:id/status`: update clip status
-- `PUT /api/clips/:id/boundary`: update trim boundaries
+- `PUT /api/clips/:id/trim`: update clip in/out points
 - `POST /api/clips/:id/split`: split a clip
 - `POST /api/clips/merge`: merge two clips
 
@@ -252,7 +250,7 @@ Important entities:
 - `src/components/ReviewApp.tsx`: main review UI
 - `src/services/ingestion-service.ts`: `uv run yt-dlp` and `ffprobe` integration
 - `src/services/audio-analysis-service.ts`: Node-to-Python bridge
-- `src/services/export-service.ts`: Remotion export logic
+- `src/services/export-service.ts`: ffmpeg export and annotation sidecars
 - `src/services/project-service.ts`: `project.json` and `manifest.json` persistence
 - `analyzer/analyze.py`: Python beat/BPM analysis CLI
 
@@ -276,11 +274,11 @@ Install `ffmpeg`, which provides both `ffmpeg` and `ffprobe`.
 
 ### Audio analysis failed to start
 
-Make sure `uv` is installed and that Python dependencies have been synced with `uv sync` or installed into a virtual environment.
+Make sure `uv` is installed and that Python dependencies have been synced with `uv sync`.
 
 ### Export failed
 
-Make sure JavaScript dependencies are installed and that `ffmpeg` is available. Remotion export depends on both.
+Make sure `ffmpeg` is available and the clip's extracted MP4 exists.
 
 ## Current Status
 
