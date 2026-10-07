@@ -1,0 +1,294 @@
+{
+  "knowledge_base": {
+    "id": "bachata-move-graph-example",
+    "name": "Bachata Movement and Transition Knowledge Base",
+    "version": "0.1.0",
+    "language": "en",
+    "move_count": 50,
+    "status": "illustrative_seed_data",
+    "description": "A normalized example graph for choreography planning, continuity validation, and reference-clip retrieval. Each move is a node; its ordered_next field contains ranked directed edges.",
+    "important_notice": "Move names and technique conventions vary by school and region. Entry/exit states model one normalized reference implementation at an eight-count boundary. Safety, compatibility, and difficulty values are illustrative and require review by qualified bachata instructors before production or teaching use.",
+    "rights_notice": "All clip_ref values are placeholders. Replace them only with footage, music, and performer likenesses you are authorized to use.",
+    "created_for": "ChoreoGraph Director prototype"
+  },
+  "edge_tuple_schema": [
+    "target_move_id",
+    "compatibility_score_0_to_1",
+    "bridge_beats",
+    "reason_codes"
+  ],
+  "reason_code_definitions": {
+    "state_match": "The source exit state directly matches the target entry state.",
+    "phrase_safe": "The pair can resolve cleanly at a normalized eight-count boundary.",
+    "energy_build": "The target raises movement or visual energy.",
+    "energy_release": "The target lowers energy or creates a reset.",
+    "hand_change": "A short, explicit hand-connection change is required.",
+    "position_change": "A short spatial repositioning is required.",
+    "camera_continuity": "The pair has compatible default framing requirements.",
+    "accent_ready": "The target offers a clear musical-accent opportunity.",
+    "terminal": "The target is designed to end a phrase or scene."
+  },
+  "canonical_states": [
+    {"id":"S_OPEN_TWO","hold":"open","relative_position":"facing_each_other","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"up_slot","hand_connections":["leader_left_to_follower_right","leader_right_to_follower_left"],"distance":"medium"},
+    {"id":"S_OPEN_SINGLE","hold":"single_hand","relative_position":"facing_each_other","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"up_slot","hand_connections":["leader_left_to_follower_right"],"distance":"medium"},
+    {"id":"S_CLOSED","hold":"closed","relative_position":"facing_each_other","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"up_slot","hand_connections":["leader_left_to_follower_right","leader_right_to_follower_left"],"distance":"close"},
+    {"id":"S_CROSS_HAND","hold":"cross_hand","relative_position":"facing_each_other","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"up_slot","hand_connections":["leader_left_to_follower_left","leader_right_to_follower_right"],"distance":"medium"},
+    {"id":"S_HAMMERLOCK","hold":"hammerlock","relative_position":"offset_same_direction","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"down_slot","hand_connections":["leader_left_to_follower_left","leader_right_to_follower_right"],"distance":"close"},
+    {"id":"S_WRAP","hold":"closed","relative_position":"offset_same_direction","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"down_slot","hand_connections":["leader_left_to_follower_right","leader_right_to_follower_left"],"distance":"close"},
+    {"id":"S_SHADOW","hold":"shadow","relative_position":"offset_same_direction","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"down_slot","hand_connections":["leader_left_to_follower_right","leader_right_to_follower_left"],"distance":"close"},
+    {"id":"S_SIDE_BY_SIDE","hold":"side_by_side","relative_position":"side_by_side","leader_weight_foot":"right","follower_weight_foot":"left","leader_facing":"down_slot","follower_facing":"down_slot","hand_connections":["leader_left_to_follower_right"],"distance":"medium"},
+    {"id":"S_FREE_POSE","hold":"transitioning","relative_position":"offset_same_direction","leader_weight_foot":"split","follower_weight_foot":"split","leader_facing":"diagonal","follower_facing":"diagonal","hand_connections":["no_hand_connection"],"distance":"medium"}
+  ],
+  "moves": [
+    {
+      "id":"M001","name":"Closed Basic","family":"basic","styles":["traditional","moderna","sensual"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["foundation","reset","phrase_safe"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"none"},"musical_fit":["intro","verse","reset"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","side"],"must_show":["both_partners","feet"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M001.mp4",
+      "ordered_next":[["M004",0.97,0,["state_match","phrase_safe","camera_continuity"]],["M007",0.95,0,["state_match","accent_ready"]],["M044",0.91,0,["state_match","energy_build"]],["M045",0.88,0,["position_change","energy_build"]]]
+    },
+    {
+      "id":"M002","name":"Open Basic","family":"basic","styles":["traditional","moderna","fusion"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["foundation","reset","versatile"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"none"},"musical_fit":["intro","verse","reset"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","three_quarter"],"must_show":["both_partners","feet"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M002.mp4",
+      "ordered_next":[["M003",0.98,0,["state_match","phrase_safe"]],["M013",0.95,0,["state_match","energy_build"]],["M021",0.93,0,["state_match","position_change"]],["M030",0.89,2,["hand_change","phrase_safe"]]]
+    },
+    {
+      "id":"M003","name":"Side Basic","family":"basic","styles":["traditional","moderna"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["lateral","foundation","reset"],
+      "motion":{"travel":"medium","rotation":"none","footwork_complexity":"low","upper_body_isolation":"none"},"musical_fit":["verse","chorus","reset"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front"],"must_show":["both_partners","travel_space"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M003.mp4",
+      "ordered_next":[["M008",0.96,0,["state_match","phrase_safe"]],["M011",0.93,0,["state_match","energy_build"]],["M039",0.88,2,["position_change","camera_continuity"]]]
+    },
+    {
+      "id":"M004","name":"Forward-and-Back Basic","family":"basic","styles":["traditional","moderna"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["linear","connection","reset"],
+      "motion":{"travel":"medium","rotation":"none","footwork_complexity":"low","upper_body_isolation":"none"},"musical_fit":["verse","break","reset"],"camera":{"preferred_framing":["full_body"],"preferred_angles":["side","three_quarter"],"must_show":["both_partners","travel_space"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M004.mp4",
+      "ordered_next":[["M005",0.95,0,["state_match","phrase_safe"]],["M046",0.92,0,["state_match","accent_ready"]],["M035",0.87,0,["state_match","position_change"]]]
+    },
+    {
+      "id":"M005","name":"Box Basic","family":"basic","styles":["traditional","moderna"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["compact","direction_change","foundation"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":90,"footwork_complexity":"low","upper_body_isolation":"none"},"musical_fit":["verse","instrumental","reset"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","overhead"],"must_show":["feet"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M005.mp4",
+      "ordered_next":[["M001",0.97,0,["state_match","energy_release"]],["M047",0.90,0,["state_match","accent_ready"]],["M044",0.89,0,["state_match","energy_build"]]]
+    },
+    {
+      "id":"M006","name":"Syncopated Basic","family":"basic","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["syncopation","rhythmic","footwork"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["percussion_break","chorus","accent"],"camera":{"preferred_framing":["full_body","lower_body"],"preferred_angles":["front"],"must_show":["feet","both_partners"]},"safety":{"level":"low","prerequisites":["stable_basic_timing"]},"clip_ref":"gs://replace-me/bachata/M006.mp4",
+      "ordered_next":[["M009",0.94,0,["state_match","energy_build"]],["M015",0.91,0,["state_match","phrase_safe"]],["M002",0.90,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M007","name":"Basic with Hip Accent","family":"basic_variation","styles":["traditional","sensual"],"difficulty":"beginner","duration_beats":8,"energy":"medium","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["hip_accent","count_four","count_eight"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"low"},"musical_fit":["accent","verse","chorus"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front","three_quarter"],"must_show":["hips","connection"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M007.mp4",
+      "ordered_next":[["M046",0.95,0,["state_match","accent_ready"]],["M001",0.94,0,["state_match","energy_release"]],["M045",0.87,0,["position_change","energy_build"]]]
+    },
+    {
+      "id":"M008","name":"Basic with Tap Variation","family":"basic_variation","styles":["traditional","moderna"],"difficulty":"beginner","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["tap","rhythmic","footwork"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["percussion","verse","accent"],"camera":{"preferred_framing":["full_body","lower_body"],"preferred_angles":["front"],"must_show":["feet"]},"safety":{"level":"low","prerequisites":["stable_basic_timing"]},"clip_ref":"gs://replace-me/bachata/M008.mp4",
+      "ordered_next":[["M010",0.94,0,["state_match","energy_build"]],["M013",0.92,0,["state_match","phrase_safe"]],["M003",0.91,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M009","name":"Mambo Basic","family":"footwork","styles":["traditional","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["mambo","syncopation","footwork"],
+      "motion":{"travel":"medium","rotation":"none","footwork_complexity":"high","upper_body_isolation":"low"},"musical_fit":["mambo_section","percussion_break","chorus"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front"],"must_show":["feet","travel_space"]},"safety":{"level":"low","prerequisites":["syncopated_timing"]},"clip_ref":"gs://replace-me/bachata/M009.mp4",
+      "ordered_next":[["M010",0.93,0,["state_match","energy_build"]],["M049",0.89,0,["state_match","camera_continuity"]],["M002",0.88,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M010","name":"Dominican Basic","family":"footwork","styles":["traditional"],"difficulty":"intermediate","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["dominican","footwork","rhythmic"],
+      "motion":{"travel":"medium","rotation":"none","footwork_complexity":"high","upper_body_isolation":"low"},"musical_fit":["percussion_break","mambo_section","chorus"],"camera":{"preferred_framing":["full_body","lower_body"],"preferred_angles":["front","three_quarter"],"must_show":["feet","both_partners"]},"safety":{"level":"low","prerequisites":["traditional_basic","syncopated_timing"]},"clip_ref":"gs://replace-me/bachata/M010.mp4",
+      "ordered_next":[["M042",0.91,0,["state_match","camera_continuity"]],["M011",0.90,0,["state_match","energy_build"]],["M003",0.89,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M011","name":"Leader Right Turn","family":"turn","styles":["traditional","moderna"],"difficulty":"beginner","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["leader_turn","clockwise","spot_turn"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","chorus","accent"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","three_quarter"],"must_show":["leader","hand_connection"]},"safety":{"level":"low","prerequisites":["leader_spotting"]},"clip_ref":"gs://replace-me/bachata/M011.mp4",
+      "ordered_next":[["M013",0.96,0,["state_match","phrase_safe"]],["M021",0.91,0,["state_match","position_change"]],["M002",0.90,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M012","name":"Leader Left Turn","family":"turn","styles":["traditional","moderna"],"difficulty":"beginner","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["leader_turn","counterclockwise","spot_turn"],
+      "motion":{"travel":"low","rotation":"counterclockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","chorus","accent"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","three_quarter"],"must_show":["leader","hand_connection"]},"safety":{"level":"low","prerequisites":["leader_spotting"]},"clip_ref":"gs://replace-me/bachata/M012.mp4",
+      "ordered_next":[["M014",0.96,0,["state_match","phrase_safe"]],["M023",0.91,0,["state_match","position_change"]],["M003",0.89,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M013","name":"Follower Right Turn","family":"turn","styles":["traditional","moderna","sensual"],"difficulty":"beginner","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["follower_turn","clockwise","spot_turn"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","chorus","accent"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","three_quarter"],"must_show":["follower","hand_connection"]},"safety":{"level":"low","prerequisites":["follower_spotting"]},"clip_ref":"gs://replace-me/bachata/M013.mp4",
+      "ordered_next":[["M015",0.95,0,["state_match","energy_build"]],["M025",0.92,0,["state_match","position_change"]],["M002",0.91,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M014","name":"Follower Left Turn","family":"turn","styles":["traditional","moderna"],"difficulty":"beginner","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["follower_turn","counterclockwise","spot_turn"],
+      "motion":{"travel":"low","rotation":"counterclockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","chorus","accent"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","three_quarter"],"must_show":["follower","hand_connection"]},"safety":{"level":"low","prerequisites":["follower_spotting"]},"clip_ref":"gs://replace-me/bachata/M014.mp4",
+      "ordered_next":[["M016",0.95,0,["state_match","energy_build"]],["M030",0.89,2,["hand_change","phrase_safe"]],["M003",0.90,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M015","name":"Inside Turn","family":"turn","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["inside_turn","follower_turn","direction_change"],
+      "motion":{"travel":"medium","rotation":"counterclockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","chorus","buildup"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front","three_quarter"],"must_show":["both_partners","travel_space"]},"safety":{"level":"low","prerequisites":["follower_spotting","clear_lead_path"]},"clip_ref":"gs://replace-me/bachata/M015.mp4",
+      "ordered_next":[["M021",0.94,0,["state_match","position_change"]],["M025",0.91,0,["state_match","energy_build"]],["M006",0.88,0,["state_match","camera_continuity"]]]
+    },
+    {
+      "id":"M016","name":"Outside Turn","family":"turn","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["outside_turn","follower_turn","direction_change"],
+      "motion":{"travel":"medium","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","chorus","buildup"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front","three_quarter"],"must_show":["both_partners","travel_space"]},"safety":{"level":"low","prerequisites":["follower_spotting","clear_lead_path"]},"clip_ref":"gs://replace-me/bachata/M016.mp4",
+      "ordered_next":[["M023",0.94,0,["state_match","position_change"]],["M039",0.89,2,["position_change","camera_continuity"]],["M002",0.88,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M017","name":"Follower Double Right Turn","family":"turn","styles":["moderna","fusion"],"difficulty":"advanced","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["double_turn","follower_turn","clockwise"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":720,"footwork_complexity":"high","upper_body_isolation":"none"},"musical_fit":["chorus","climax","strong_accent"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front"],"must_show":["follower","floor_space"]},"safety":{"level":"moderate","prerequisites":["advanced_spotting","stable_axis","clear_floor"]},"clip_ref":"gs://replace-me/bachata/M017.mp4",
+      "ordered_next":[["M002",0.93,0,["state_match","energy_release"]],["M021",0.88,0,["state_match","position_change"]],["M050",0.84,2,["position_change","terminal"]]]
+    },
+    {
+      "id":"M018","name":"Follower Double Left Turn","family":"turn","styles":["moderna","fusion"],"difficulty":"advanced","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["double_turn","follower_turn","counterclockwise"],
+      "motion":{"travel":"low","rotation":"counterclockwise","rotation_degrees":720,"footwork_complexity":"high","upper_body_isolation":"none"},"musical_fit":["chorus","climax","strong_accent"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front"],"must_show":["follower","floor_space"]},"safety":{"level":"moderate","prerequisites":["advanced_spotting","stable_axis","clear_floor"]},"clip_ref":"gs://replace-me/bachata/M018.mp4",
+      "ordered_next":[["M003",0.92,0,["state_match","energy_release"]],["M023",0.87,0,["state_match","position_change"]],["M050",0.83,2,["position_change","terminal"]]]
+    },
+    {
+      "id":"M019","name":"Spot Turn to Single Hand","family":"turn","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_SINGLE","tags":["spot_turn","single_hand","setup"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","buildup","accent"],"camera":{"preferred_framing":["full_body"],"preferred_angles":["front","three_quarter"],"must_show":["hand_connection"]},"safety":{"level":"low","prerequisites":["follower_spotting"]},"clip_ref":"gs://replace-me/bachata/M019.mp4",
+      "ordered_next":[["M020",0.98,0,["state_match","phrase_safe"]],["M024",0.93,0,["state_match","energy_build"]]]
+    },
+    {
+      "id":"M020","name":"Single-Hand Return","family":"hand_change","styles":["traditional","moderna","fusion"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_OPEN_SINGLE","exit_state":"S_OPEN_TWO","tags":["single_hand","reconnect","reset"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"none"},"musical_fit":["verse","reset","phrase_end"],"camera":{"preferred_framing":["full_body"],"preferred_angles":["front"],"must_show":["hand_connection"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M020.mp4",
+      "ordered_next":[["M002",0.98,0,["state_match","energy_release"]],["M013",0.93,0,["state_match","energy_build"]],["M030",0.89,2,["hand_change","phrase_safe"]]]
+    },
+    {
+      "id":"M021","name":"Cross-Body Lead","family":"traveling_pattern","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["cross_body","slot_change","travel"],
+      "motion":{"travel":"high","rotation":"counterclockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","chorus","buildup"],"camera":{"preferred_framing":["wide"],"preferred_angles":["side","three_quarter"],"must_show":["travel_space","both_partners"]},"safety":{"level":"low","prerequisites":["clear_floor","slot_awareness"]},"clip_ref":"gs://replace-me/bachata/M021.mp4",
+      "ordered_next":[["M022",0.96,0,["state_match","energy_build","camera_continuity"]],["M023",0.94,0,["state_match","energy_build","camera_continuity"]],["M042",0.90,0,["state_match","phrase_safe"]]]
+    },
+    {
+      "id":"M022","name":"Cross-Body Inside Turn","family":"traveling_turn","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["cross_body","inside_turn","travel"],
+      "motion":{"travel":"high","rotation":"counterclockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["chorus","buildup","accent"],"camera":{"preferred_framing":["wide"],"preferred_angles":["side","three_quarter"],"must_show":["travel_space","follower"]},"safety":{"level":"low","prerequisites":["clear_floor","follower_spotting"]},"clip_ref":"gs://replace-me/bachata/M022.mp4",
+      "ordered_next":[["M049",0.93,0,["state_match","energy_build","camera_continuity"]],["M002",0.90,0,["state_match","energy_release"]],["M025",0.86,0,["state_match","position_change"]]]
+    },
+    {
+      "id":"M023","name":"Cross-Body Outside Turn","family":"traveling_turn","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["cross_body","outside_turn","travel"],
+      "motion":{"travel":"high","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["chorus","buildup","accent"],"camera":{"preferred_framing":["wide"],"preferred_angles":["side","three_quarter"],"must_show":["travel_space","follower"]},"safety":{"level":"low","prerequisites":["clear_floor","follower_spotting"]},"clip_ref":"gs://replace-me/bachata/M023.mp4",
+      "ordered_next":[["M049",0.92,0,["state_match","energy_build","camera_continuity"]],["M003",0.90,0,["state_match","energy_release"]],["M039",0.86,2,["position_change","camera_continuity"]]]
+    },
+    {
+      "id":"M024","name":"Copa Variation","family":"traveling_pattern","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_SINGLE","exit_state":"S_OPEN_SINGLE","tags":["copa","direction_change","single_hand"],
+      "motion":{"travel":"medium","rotation":"counterclockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","buildup","syncopation"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["side","three_quarter"],"must_show":["direction_change","hand_connection"]},"safety":{"level":"low","prerequisites":["clear_lead_path"]},"clip_ref":"gs://replace-me/bachata/M024.mp4",
+      "ordered_next":[["M020",0.96,0,["state_match","energy_release"]],["M024",0.86,0,["state_match","phrase_safe"]]]
+    },
+    {
+      "id":"M025","name":"Wrap Entry","family":"wrap","styles":["moderna","sensual"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_WRAP","tags":["wrap","position_change","connection"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["verse","buildup","phrase_start"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front","three_quarter"],"must_show":["hand_path","both_partners"]},"safety":{"level":"moderate","prerequisites":["comfortable_shoulder_range","clear_hand_path"]},"clip_ref":"gs://replace-me/bachata/M025.mp4",
+      "ordered_next":[["M026",0.98,0,["state_match","phrase_safe","camera_continuity"]],["M027",0.95,0,["state_match","energy_release"]],["M029",0.91,0,["state_match","position_change"]]]
+    },
+    {
+      "id":"M026","name":"Wrap Basic","family":"wrap","styles":["moderna","sensual"],"difficulty":"intermediate","duration_beats":8,"energy":"low","entry_state":"S_WRAP","exit_state":"S_WRAP","tags":["wrap","basic","connection"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"low"},"musical_fit":["verse","break","connection"],"camera":{"preferred_framing":["upper_body","full_body"],"preferred_angles":["front","side"],"must_show":["connection","faces"]},"safety":{"level":"moderate","prerequisites":["comfortable_shoulder_range"]},"clip_ref":"gs://replace-me/bachata/M026.mp4",
+      "ordered_next":[["M027",0.98,0,["state_match","phrase_safe"]],["M029",0.94,0,["state_match","energy_release"]],["M026",0.89,0,["state_match","camera_continuity"]]]
+    },
+    {
+      "id":"M027","name":"Unwrap","family":"wrap","styles":["moderna","sensual"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_WRAP","exit_state":"S_OPEN_TWO","tags":["unwrap","release","turn"],
+      "motion":{"travel":"medium","rotation":"counterclockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["phrase_end","chorus","accent"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front","three_quarter"],"must_show":["hand_path","follower"]},"safety":{"level":"moderate","prerequisites":["clear_hand_path","follower_spotting"]},"clip_ref":"gs://replace-me/bachata/M027.mp4",
+      "ordered_next":[["M002",0.97,0,["state_match","energy_release"]],["M021",0.92,0,["state_match","position_change"]],["M030",0.87,2,["hand_change","phrase_safe"]]]
+    },
+    {
+      "id":"M028","name":"Cuddle Entry","family":"wrap","styles":["moderna","sensual"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_CROSS_HAND","exit_state":"S_WRAP","tags":["cuddle","wrap","cross_hand"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["verse","buildup","connection"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front","three_quarter"],"must_show":["hand_path","connection"]},"safety":{"level":"moderate","prerequisites":["comfortable_shoulder_range","clear_hand_path"]},"clip_ref":"gs://replace-me/bachata/M028.mp4",
+      "ordered_next":[["M026",0.97,0,["state_match","camera_continuity"]],["M029",0.95,0,["state_match","phrase_safe"]],["M027",0.91,0,["state_match","energy_build"]]]
+    },
+    {
+      "id":"M029","name":"Cuddle Exit","family":"wrap","styles":["moderna","sensual"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_WRAP","exit_state":"S_OPEN_TWO","tags":["cuddle","exit","release"],
+      "motion":{"travel":"medium","rotation":"counterclockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["phrase_end","verse","accent"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","three_quarter"],"must_show":["hand_path","both_partners"]},"safety":{"level":"moderate","prerequisites":["clear_hand_path"]},"clip_ref":"gs://replace-me/bachata/M029.mp4",
+      "ordered_next":[["M002",0.97,0,["state_match","energy_release"]],["M013",0.92,0,["state_match","energy_build"]],["M039",0.87,2,["position_change","camera_continuity"]]]
+    },
+    {
+      "id":"M030","name":"Cross-Hand Change","family":"hand_change","styles":["moderna","fusion"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_OPEN_TWO","exit_state":"S_CROSS_HAND","tags":["cross_hand","setup","connection_change"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"none"},"musical_fit":["verse","reset","setup"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front"],"must_show":["hands"]},"safety":{"level":"low","prerequisites":[]},"clip_ref":"gs://replace-me/bachata/M030.mp4",
+      "ordered_next":[["M031",0.97,0,["state_match","energy_build"]],["M034",0.95,0,["state_match","phrase_safe"]],["M028",0.92,0,["state_match","position_change"]]]
+    },
+    {
+      "id":"M031","name":"Hammerlock Entry","family":"hammerlock","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_CROSS_HAND","exit_state":"S_HAMMERLOCK","tags":["hammerlock","entry","arm_path"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["buildup","verse","phrase_start"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front","side"],"must_show":["arm_path","shoulders"]},"safety":{"level":"moderate","prerequisites":["comfortable_shoulder_range","no_forced_rotation"]},"clip_ref":"gs://replace-me/bachata/M031.mp4",
+      "ordered_next":[["M032",0.98,0,["state_match","phrase_safe","camera_continuity"]],["M033",0.95,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M032","name":"Hammerlock Basic","family":"hammerlock","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"low","entry_state":"S_HAMMERLOCK","exit_state":"S_HAMMERLOCK","tags":["hammerlock","basic","connection"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"low"},"musical_fit":["verse","break","hold"],"camera":{"preferred_framing":["upper_body","full_body"],"preferred_angles":["front","side"],"must_show":["arm_path","connection"]},"safety":{"level":"moderate","prerequisites":["comfortable_shoulder_range","no_forced_rotation"]},"clip_ref":"gs://replace-me/bachata/M032.mp4",
+      "ordered_next":[["M033",0.98,0,["state_match","phrase_safe"]],["M032",0.88,0,["state_match","camera_continuity"]]]
+    },
+    {
+      "id":"M033","name":"Hammerlock Exit","family":"hammerlock","styles":["moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_HAMMERLOCK","exit_state":"S_OPEN_TWO","tags":["hammerlock","exit","release"],
+      "motion":{"travel":"medium","rotation":"counterclockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["phrase_end","accent","chorus"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","side"],"must_show":["arm_path","both_partners"]},"safety":{"level":"moderate","prerequisites":["comfortable_shoulder_range","clear_hand_path"]},"clip_ref":"gs://replace-me/bachata/M033.mp4",
+      "ordered_next":[["M002",0.97,0,["state_match","energy_release"]],["M021",0.91,0,["state_match","position_change"]],["M013",0.89,0,["state_match","energy_build"]]]
+    },
+    {
+      "id":"M034","name":"Pretzel Sequence","family":"hand_pattern","styles":["moderna","fusion"],"difficulty":"advanced","duration_beats":16,"energy":"high","entry_state":"S_CROSS_HAND","exit_state":"S_CROSS_HAND","tags":["pretzel","hand_pattern","multi_turn"],
+      "motion":{"travel":"medium","rotation":"mixed","rotation_degrees":720,"footwork_complexity":"high","upper_body_isolation":"low"},"musical_fit":["chorus","climax","extended_phrase"],"camera":{"preferred_framing":["wide"],"preferred_angles":["front","three_quarter"],"must_show":["hands","both_partners","travel_space"]},"safety":{"level":"moderate","prerequisites":["clear_hand_path","advanced_turn_control","comfortable_shoulder_range"]},"clip_ref":"gs://replace-me/bachata/M034.mp4",
+      "ordered_next":[["M031",0.91,0,["state_match","phrase_safe"]],["M028",0.89,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M035","name":"Shadow Entry","family":"shadow","styles":["sensual","moderna"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_CLOSED","exit_state":"S_SHADOW","tags":["shadow","entry","position_change"],
+      "motion":{"travel":"low","rotation":"clockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["verse","buildup","phrase_start"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front","side"],"must_show":["position_change","both_partners"]},"safety":{"level":"moderate","prerequisites":["clear_hand_path","shared_axis_awareness"]},"clip_ref":"gs://replace-me/bachata/M035.mp4",
+      "ordered_next":[["M036",0.98,0,["state_match","phrase_safe","camera_continuity"]],["M037",0.94,0,["state_match","energy_build"]],["M038",0.92,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M036","name":"Shadow Basic","family":"shadow","styles":["sensual","moderna"],"difficulty":"intermediate","duration_beats":8,"energy":"low","entry_state":"S_SHADOW","exit_state":"S_SHADOW","tags":["shadow","basic","connection"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"low"},"musical_fit":["verse","break","connection"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front","side"],"must_show":["shared_direction","connection"]},"safety":{"level":"moderate","prerequisites":["shared_axis_awareness"]},"clip_ref":"gs://replace-me/bachata/M036.mp4",
+      "ordered_next":[["M037",0.96,0,["state_match","energy_build"]],["M038",0.95,0,["state_match","phrase_safe"]],["M036",0.89,0,["state_match","camera_continuity"]]]
+    },
+    {
+      "id":"M037","name":"Shadow Turn","family":"shadow","styles":["sensual","moderna"],"difficulty":"advanced","duration_beats":8,"energy":"high","entry_state":"S_SHADOW","exit_state":"S_SHADOW","tags":["shadow","turn","shared_axis"],
+      "motion":{"travel":"medium","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"high","upper_body_isolation":"medium"},"musical_fit":["chorus","climax","accent"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front","overhead"],"must_show":["shared_axis","floor_space"]},"safety":{"level":"moderate","prerequisites":["shared_axis_awareness","partner_turn_control","clear_floor"]},"clip_ref":"gs://replace-me/bachata/M037.mp4",
+      "ordered_next":[["M038",0.96,0,["state_match","energy_release"]],["M036",0.90,0,["state_match","phrase_safe"]]]
+    },
+    {
+      "id":"M038","name":"Shadow Exit","family":"shadow","styles":["sensual","moderna"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_SHADOW","exit_state":"S_OPEN_TWO","tags":["shadow","exit","release"],
+      "motion":{"travel":"medium","rotation":"counterclockwise","rotation_degrees":180,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["phrase_end","chorus","accent"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front","side"],"must_show":["position_change","both_partners"]},"safety":{"level":"moderate","prerequisites":["clear_hand_path"]},"clip_ref":"gs://replace-me/bachata/M038.mp4",
+      "ordered_next":[["M002",0.97,0,["state_match","energy_release"]],["M013",0.92,0,["state_match","energy_build"]],["M042",0.90,0,["state_match","camera_continuity"]]]
+    },
+    {
+      "id":"M039","name":"Side-by-Side Entry","family":"side_by_side","styles":["traditional","moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_SIDE_BY_SIDE","tags":["side_by_side","entry","position_change"],
+      "motion":{"travel":"medium","rotation":"clockwise","rotation_degrees":90,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["verse","buildup","phrase_start"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front"],"must_show":["both_partners","feet"]},"safety":{"level":"low","prerequisites":["shared_direction_awareness"]},"clip_ref":"gs://replace-me/bachata/M039.mp4",
+      "ordered_next":[["M040",0.98,0,["state_match","phrase_safe","camera_continuity"]],["M041",0.94,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M040","name":"Side-by-Side Basic","family":"side_by_side","styles":["traditional","moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_SIDE_BY_SIDE","exit_state":"S_SIDE_BY_SIDE","tags":["side_by_side","basic","footwork"],
+      "motion":{"travel":"medium","rotation":"none","footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["percussion","chorus","instrumental"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front"],"must_show":["both_partners","feet"]},"safety":{"level":"low","prerequisites":["shared_direction_awareness"]},"clip_ref":"gs://replace-me/bachata/M040.mp4",
+      "ordered_next":[["M041",0.97,0,["state_match","phrase_safe"]],["M040",0.90,0,["state_match","camera_continuity"]]]
+    },
+    {
+      "id":"M041","name":"Side-by-Side Exit","family":"side_by_side","styles":["traditional","moderna","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_SIDE_BY_SIDE","exit_state":"S_OPEN_TWO","tags":["side_by_side","exit","reconnect"],
+      "motion":{"travel":"medium","rotation":"counterclockwise","rotation_degrees":90,"footwork_complexity":"medium","upper_body_isolation":"none"},"musical_fit":["phrase_end","verse","accent"],"camera":{"preferred_framing":["wide","full_body"],"preferred_angles":["front"],"must_show":["reconnection","both_partners"]},"safety":{"level":"low","prerequisites":["shared_direction_awareness"]},"clip_ref":"gs://replace-me/bachata/M041.mp4",
+      "ordered_next":[["M002",0.98,0,["state_match","energy_release"]],["M021",0.91,0,["state_match","position_change"]],["M013",0.90,0,["state_match","energy_build"]]]
+    },
+    {
+      "id":"M042","name":"Paseo","family":"traveling_pattern","styles":["traditional","moderna"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["paseo","travel","promenade"],
+      "motion":{"travel":"high","rotation":"none","footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["verse","instrumental","buildup"],"camera":{"preferred_framing":["wide"],"preferred_angles":["side","three_quarter"],"must_show":["travel_space","both_partners"]},"safety":{"level":"low","prerequisites":["clear_floor","shared_direction_awareness"]},"clip_ref":"gs://replace-me/bachata/M042.mp4",
+      "ordered_next":[["M043",0.96,0,["state_match","energy_build","camera_continuity"]],["M049",0.93,0,["state_match","energy_build","camera_continuity"]],["M003",0.90,0,["state_match","energy_release"]]]
+    },
+    {
+      "id":"M043","name":"Paseo with Follower Turn","family":"traveling_turn","styles":["traditional","moderna"],"difficulty":"intermediate","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["paseo","follower_turn","travel"],
+      "motion":{"travel":"high","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"medium","upper_body_isolation":"low"},"musical_fit":["chorus","buildup","accent"],"camera":{"preferred_framing":["wide"],"preferred_angles":["side","three_quarter"],"must_show":["travel_space","follower"]},"safety":{"level":"low","prerequisites":["clear_floor","follower_spotting"]},"clip_ref":"gs://replace-me/bachata/M043.mp4",
+      "ordered_next":[["M049",0.94,0,["state_match","camera_continuity"]],["M002",0.90,0,["state_match","energy_release"]],["M025",0.86,0,["state_match","position_change"]]]
+    },
+    {
+      "id":"M044","name":"Body Wave from Closed","family":"body_movement","styles":["sensual","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["body_wave","isolation","connection"],
+      "motion":{"travel":"none","rotation":"none","footwork_complexity":"low","upper_body_isolation":"high"},"musical_fit":["break","sustained_note","accent"],"camera":{"preferred_framing":["upper_body","full_body"],"preferred_angles":["side","three_quarter"],"must_show":["spine_line","connection"]},"safety":{"level":"moderate","prerequisites":["body_wave_control","consent_for_close_position","pain_free_spinal_range"]},"clip_ref":"gs://replace-me/bachata/M044.mp4",
+      "ordered_next":[["M001",0.96,0,["state_match","energy_release"]],["M046",0.93,0,["state_match","accent_ready"]],["M035",0.88,0,["state_match","position_change"]]]
+    },
+    {
+      "id":"M045","name":"Body Roll to Open","family":"body_movement","styles":["sensual","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_CLOSED","exit_state":"S_OPEN_TWO","tags":["body_roll","release","position_change"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"high"},"musical_fit":["break","sustained_note","phrase_end"],"camera":{"preferred_framing":["upper_body","full_body"],"preferred_angles":["side","three_quarter"],"must_show":["spine_line","release"]},"safety":{"level":"moderate","prerequisites":["body_roll_control","consent_for_close_position","pain_free_spinal_range"]},"clip_ref":"gs://replace-me/bachata/M045.mp4",
+      "ordered_next":[["M002",0.96,0,["state_match","energy_release"]],["M013",0.91,0,["state_match","energy_build"]],["M042",0.88,0,["state_match","camera_continuity"]]]
+    },
+    {
+      "id":"M046","name":"Hip Roll in Closed","family":"body_movement","styles":["sensual","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"medium","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["hip_roll","isolation","circular"],
+      "motion":{"travel":"none","rotation":"clockwise","rotation_degrees":360,"footwork_complexity":"low","upper_body_isolation":"medium"},"musical_fit":["break","bass_accent","sustained_note"],"camera":{"preferred_framing":["full_body","upper_body"],"preferred_angles":["front","three_quarter"],"must_show":["hips","connection"]},"safety":{"level":"moderate","prerequisites":["hip_isolation_control","consent_for_close_position","pain_free_hip_range"]},"clip_ref":"gs://replace-me/bachata/M046.mp4",
+      "ordered_next":[["M001",0.96,0,["state_match","energy_release"]],["M044",0.92,0,["state_match","energy_build"]],["M047",0.90,0,["state_match","accent_ready"]]]
+    },
+    {
+      "id":"M047","name":"Chest Isolation in Closed","family":"body_movement","styles":["sensual","fusion"],"difficulty":"intermediate","duration_beats":8,"energy":"low","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["chest_isolation","connection","accent"],
+      "motion":{"travel":"none","rotation":"none","footwork_complexity":"low","upper_body_isolation":"high"},"musical_fit":["break","vocal_accent","sustained_note"],"camera":{"preferred_framing":["upper_body"],"preferred_angles":["front","side"],"must_show":["torso","connection"]},"safety":{"level":"moderate","prerequisites":["chest_isolation_control","consent_for_close_position","pain_free_spinal_range"]},"clip_ref":"gs://replace-me/bachata/M047.mp4",
+      "ordered_next":[["M044",0.94,0,["state_match","energy_build"]],["M001",0.93,0,["state_match","energy_release"]],["M048",0.84,0,["state_match","accent_ready"]]]
+    },
+    {
+      "id":"M048","name":"Head Roll Preparation and Release","family":"head_movement","styles":["sensual","fusion"],"difficulty":"advanced","duration_beats":8,"energy":"medium","entry_state":"S_CLOSED","exit_state":"S_CLOSED","tags":["head_roll","preparation","release"],
+      "motion":{"travel":"none","rotation":"counterclockwise","rotation_degrees":360,"footwork_complexity":"low","upper_body_isolation":"high"},"musical_fit":["break","sustained_note","strong_accent"],"camera":{"preferred_framing":["upper_body","full_body"],"preferred_angles":["front","side"],"must_show":["head_path","torso_support"]},"safety":{"level":"high","prerequisites":["qualified_instruction","explicit_partner_consent","independent_head_control","pain_free_neck_range","no_forced_neck_motion"]},"clip_ref":"gs://replace-me/bachata/M048.mp4",
+      "ordered_next":[["M001",0.95,0,["state_match","energy_release"]],["M045",0.86,0,["position_change","phrase_safe"]]]
+    },
+    {
+      "id":"M049","name":"Traveling Follower Turn","family":"traveling_turn","styles":["moderna","fusion"],"difficulty":"advanced","duration_beats":8,"energy":"high","entry_state":"S_OPEN_TWO","exit_state":"S_OPEN_TWO","tags":["traveling_turn","follower_turn","dynamic"],
+      "motion":{"travel":"high","rotation":"clockwise","rotation_degrees":720,"footwork_complexity":"high","upper_body_isolation":"none"},"musical_fit":["chorus","climax","strong_accent"],"camera":{"preferred_framing":["wide"],"preferred_angles":["side","three_quarter"],"must_show":["travel_space","follower","floor_space"]},"safety":{"level":"moderate","prerequisites":["advanced_spotting","clear_floor","stable_axis"]},"clip_ref":"gs://replace-me/bachata/M049.mp4",
+      "ordered_next":[["M002",0.92,0,["state_match","energy_release"]],["M021",0.89,0,["state_match","camera_continuity"]],["M050",0.85,2,["position_change","terminal"]]]
+    },
+    {
+      "id":"M050","name":"Closing Pose","family":"ending","styles":["traditional","moderna","sensual","fusion"],"difficulty":"beginner","duration_beats":8,"energy":"low","entry_state":"S_OPEN_TWO","exit_state":"S_FREE_POSE","tags":["ending","pose","terminal"],
+      "motion":{"travel":"low","rotation":"none","footwork_complexity":"low","upper_body_isolation":"low"},"musical_fit":["song_end","phrase_end","final_accent"],"camera":{"preferred_framing":["full_body","wide"],"preferred_angles":["front","three_quarter"],"must_show":["both_partners","final_line"]},"safety":{"level":"low","prerequisites":["stable_final_balance"]},"clip_ref":"gs://replace-me/bachata/M050.mp4",
+      "terminal":true,"ordered_next":[]
+    }
+  ]
+}
